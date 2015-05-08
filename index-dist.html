@@ -1,0 +1,147 @@
+<html ng-app="myApp">
+<head>
+    <title>Distributed DNS</title>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.4/angular.min.js"></script>
+
+<body ng-controller="MainCtrl">
+    DNS Hostname: <input ng-model="domain">
+    QType: <select ng-model="qtype">
+        <option value="1">A</option>
+        <option value="28">AAAA</option>
+        <option value="2">NS</option>
+        <option value="5">CNAME</option>
+        <option value="15">MX</option>
+        <option value="43">DS</option>
+        <option value="6">SOA</option>
+        <option value="16">TXT</option>
+        <option value="255">ANY</option>
+    </select>
+    Target: <input ng-model="dnstarget" placeholder="Leave blank for defaults">
+    <button ng-click="runtest()">Run</button> <br />
+    Curl Hostname: <input ng-model="hostname">Endpoint: <input ng-model="endpoint">Path: <input ng-model="path"><input type="checkbox" ng-model="ssl">SSL <button ng-click="runcurltest()">Run</button><br />
+    <span ng-show='path != "" || hostname != "" || endpoint !=""'>
+        curl -vv -o /dev/null <span ng-show='hostname != ""'>-H 'Host: {{hostname}}'</span> http<span ng-show="ssl">s</span>://{{endpoint}}{{path}}
+    </span> <br />
+    MTR Hostname/ip: <input ng-model="target"><button ng-click="runmtr()">Run</button> <br />
+
+    <h1 ng-show="pending">PENDING</h1>
+    <h1 ng-show="fail">ERROR</h1>
+
+    <ul>
+        <li ng-repeat='result in results'>
+            <h2>Agent: {{maskip(result.Agent)}} ({{result.Name}} {{result.City}} {{result.State}} {{result.Country}} ) - <span ng show="result.ASN"><a href="http://bgp.he.net/{{result.ASN}}" target="_blank">{{result.ASN}}</a> : {{result.ASName}}</span> ({{result.Version}})</h2>
+            <ul ng-show="result.Type == 1">
+                <li ng-repeat="item in result.Result.Results">
+                    <h3>via {{item.Server}} - <span ng-show="item.ASN"><a href="http://bgp.he.net/{{item.ASN}}" target="_blank">{{item.ASN}}</a> : {{item.ASName}}</span></h3>
+                    <strong ng-show="item.Err != ''">{{item.Err}}</strong>
+                    <pre ng-show="item.Err == ''">{{item.Formated}}</pre>
+                    <div>Time Taken: {{item.RttStr}}</div>
+                </li>
+            </ul>
+            <ul ng-show="result.Type == 3">
+                <li>
+                    <h3>{{result.Result.Status}}</h3>
+                    <strong ng-show="result.Result.Err != ''">{{result.Result.Err}}</strong>
+                    <pre>{{result.Result.Header}}</pre>
+                    <div>Remote: {{result.Result.Remote}}</div>
+                    <div>Time Taken: {{result.TimeTakenStr}}</div>
+                </li>
+            </ul>
+            <ul ng-show="result.Type == 2">
+                <li>
+                    <strong ng-show="result.Result.Err != ''">{{result.Result.Err}}</strong>
+                    <pre>{{result.Result.Result}}</pre>
+                    <div>Time Taken: {{result.TimeTakenStr}}</div>
+                </li>
+            </ul>
+        </li>
+    </ul>
+
+<script>
+(function(angular) {
+    myApp = angular.module('myApp',[ ]);
+
+    myApp.controller('MainCtrl', ['$scope', '$http', function($scope, $http) {
+        console.log("init")
+        $scope.results = []
+        $scope.pending = false
+        $scope.fail = false
+        $scope.hostname = ""
+        $scope.path = ""
+        $scope.endpoint = ""
+        $scope.qtype = 1
+        $scope.ssl = false
+        $scope.maskip = function(ip){
+            var tmp = ip.split(".")
+            tmp[3] = "x"
+            return tmp.join(".")
+        }
+
+        $scope.runcurltest = function(){
+            $scope.results = []
+            $scope.pending = true
+            $scope.fail = false
+            var url = "/curl/" 
+            var data = {
+                host: $scope.hostname,
+                endpoint: $scope.endpoint,
+                path: $scope.path,
+                ssl: $scope.ssl
+            }
+            $http.post(url, data).success(function(results){
+                console.log(results)
+                $scope.pending = false
+                $scope.results = results
+            }).error(function(){
+                $scope.pending = false
+                $scope.fail = true
+            })
+        }
+
+        $scope.runmtr = function(){
+            $scope.results = []
+            $scope.pending = true
+            $scope.fail = false
+            var url = "/mtr/" 
+            var data = {
+                target: $scope.target,
+            }
+            $http.post(url, data).success(function(results){
+                console.log(results)
+                $scope.pending = false
+                $scope.results = results
+            }).error(function(){
+                $scope.pending = false
+                $scope.fail = true
+            })
+        }
+
+
+
+        $scope.runtest = function(){
+            $scope.results = []
+            $scope.pending = true
+            $scope.fail = false
+            var data = {
+                "Host": $scope.domain,
+                "QType": parseInt($scope.qtype)
+            }
+            if (($scope.dnstarget) && ($scope.dnstarget != "")) {
+                data["Targets"] = [$scope.dnstarget]
+            }
+            $http.post("/dns/", data).success(function(results){
+                console.log(results)
+                $scope.pending = false
+                $scope.results = results
+            }).error(function(){
+                $scope.pending = false
+                $scope.fail = true
+            })
+        }
+    }])
+})(window.angular);
+</script>
+
+
+</body>
+</html>
