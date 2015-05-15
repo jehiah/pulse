@@ -10,10 +10,12 @@ import (
 )
 
 type CurlResult struct {
-	Status int
-	Header http.Header
-	Remote string
-	Err    string
+	Status    int
+	Header    http.Header
+	Remote    string
+	Err       string
+	Proto     string
+	StatusStr string
 }
 
 type CurlRequest struct {
@@ -50,7 +52,7 @@ func CurlImpl(r *CurlRequest) *CurlResult {
 	log.Println(url)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return &CurlResult{0, nil, "", err.Error()}
+		return &CurlResult{0, nil, "", err.Error(), "", ""}
 	}
 	tlshost := r.Endpoint //Validate with endpoint if no host given
 	if r.Host != "" {
@@ -68,10 +70,10 @@ func CurlImpl(r *CurlRequest) *CurlResult {
 	}
 	resp, err := MyTransport.RoundTrip(req)
 	if err != nil {
-		return &CurlResult{0, nil, myDialer.RemoteStr, err.Error()}
+		return &CurlResult{0, nil, myDialer.RemoteStr, err.Error(), "", ""}
 	}
 	//log.Println(myDialer.RemoteStr)
 	//t, _ := http.DefaultTransport.(*http.Transport)
 	resp.Body.Close()
-	return &CurlResult{resp.StatusCode, resp.Header, myDialer.RemoteStr, ""}
+	return &CurlResult{resp.StatusCode, resp.Header, myDialer.RemoteStr, "", resp.Proto, resp.Status}
 }
