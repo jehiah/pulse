@@ -10,6 +10,7 @@ import (
 	"github.com/turbobytes/pulse/utils"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"net/rpc"
 	"os"
@@ -47,7 +48,10 @@ func (i *serverflag) Set(value string) error {
 }
 
 func listen(cnc string, servers []string, cfg *tls.Config) {
-	conn, err := tls.Dial("tcp", cnc, cfg)
+	dialer := new(net.Dialer)
+	dialer.Timeout = time.Minute
+
+	conn, err := tls.DialWithDialer(dialer, "tcp", cnc, cfg)
 	if err != nil {
 		log.Println(err)
 		time.Sleep(time.Second * 5)

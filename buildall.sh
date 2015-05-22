@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VERSION="1.0.27"
+VERSION="1.0.28"
 LDFLAGS="-X main.version $VERSION"
 set -o xtrace
 
