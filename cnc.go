@@ -67,10 +67,10 @@ func (agent *AgentInfo) SetBSON(raw bson.Raw) error {
 }
 
 type Worker struct {
-	Client    *rpc.Client
-	IP        string
-	Geo       string   //TODO: Make richer
-	Resolvers []string //List of resolvers this worker supports
+	Client    *rpc.Client `json:"date"`
+	IP        string      `json:"date"`
+	Geo       string      //TODO: Make richer
+	Resolvers []string    //List of resolvers this worker supports
 	Name      string
 	ASN       *string
 	ASName    *string
@@ -205,6 +205,18 @@ func (tracker *Tracker) Pinger() {
 
 func addresolvers(args pulse.DNSRequest, resolvers []string) {
 
+}
+
+//Dump json data of all workers...
+func (tracker *Tracker) WorkerJson() []byte {
+	tracker.workerlock.RLock()
+	defer tracker.workerlock.RUnlock()
+	workers := make([]*Worker, 0)
+	for _, w := range tracker.workers {
+		workers = append(workers, w)
+	}
+	data, _ := json.MarshalIndent(workers, "", "  ")
+	return data
 }
 
 func (tracker *Tracker) Runner(req *pulse.CombinedRequest) []*pulse.CombinedResult {
@@ -358,6 +370,11 @@ func runcurl(w http.ResponseWriter, r *http.Request) {
 	w.Write(b)
 }
 
+func agentshandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(tracker.WorkerJson())
+}
+
 func runmtr(w http.ResponseWriter, r *http.Request) {
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -480,6 +497,7 @@ func main() {
 		http.HandleFunc("/dns/", makeGzipHandler(runtest))
 		http.HandleFunc("/curl/", makeGzipHandler(runcurl))
 		http.HandleFunc("/mtr/", makeGzipHandler(runmtr))
+		http.HandleFunc("/agents/", makeGzipHandler(agentshandler))
 
 		log.Fatal(http.ListenAndServe(":7778", nil))
 
