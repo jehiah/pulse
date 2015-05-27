@@ -22,3 +22,10 @@ _testmain.go
 *.exe
 *.test
 *.prof
+
+#Dev certs in current directory
+ca.crt
+minion.crt
+minion.key
+server.crt
+server.key
