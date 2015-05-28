@@ -83,7 +83,7 @@ API endpoint: /dns/
 Method: POST
 Payload: Json object
 
-example
+example :-
 
 	{
 		"Host": "example.com",
@@ -97,11 +97,41 @@ example
 
 #### HTTP test
 
-TODO
+API endpoint: /curl/
+Method: POST
+Payload: Json object
+
+example :-
+
+	{
+		"Path": "/foo/bar.jpg",
+		"Endpoint": "example.com",
+		"Host": "foobar.com",
+		"Ssl": false
+	}
+
+`Path` : The URI to test
+`Endpoint` : The server to connect to.
+`Host` : The contents of the Host header. If blank then endpoint's value is used here.
+`Ssl` : Weather to talk SSL/TLS or plaintext.
+
+The HTTP test makes a GET request to the target and once the headers come in, it terminates the connection without consuming the full body. This is by design so as to not consume too much bandwidth.
 
 #### mtr/traceroute
 
-TODO
+mtr test is a wrapper around the mtr command.
+
+API endpoint: /mtr/
+Method: POST
+Payload: Json object
+
+example :-
+
+	{
+		"Target": "example.com"
+	}
+
+`Target` : The hostname/ip we want to trace to.
 
 ## Create new test types
 
