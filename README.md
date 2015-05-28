@@ -79,7 +79,21 @@ http://cnc.host.name:7778/ contains a rough demo UI to run tests.
 
 #### DNS test
 
-TODO
+API endpoint: /dns/
+Method: POST
+Payload: Json object
+
+example
+
+	{
+		"Host": "example.com",
+		"QType": 1,
+		"Targets": ["8.8.8.8", "8.8.4.4"]
+	}
+
+`Host` : The hostname we want to resolve
+`QType` : Dns [query type](http://en.wikipedia.org/wiki/List_of_DNS_record_types#Resource_records)
+`Targets` : The nameservers we want to query
 
 #### HTTP test
 
