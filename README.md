@@ -17,11 +17,13 @@ Dependencies: mtr command (ubuntu: apt-get install mtr-tiny)
 
 You can build these for any target supported by Go by manipulating `GOOS` and `GOARCH`.  gccgo is not supported currently because it uses older Go versions. You might need to adapt the code for gccgo. We had success in [running it on MIPS](http://www.sajalkayan.com/post/golang-openwrt-mips.html) as proof of concept.
 
+It is important that the CNC and minion are from the same release. If you are updating one of them then its crucial to update the other to avoid unexpected behaviour. They share data structures.
+
 ## TLS PKI
 
 CNC and minion use TLS to communicate with each other. Use your own CA to sign the certificates and minion and CNC trusts only this CA. The TLS setup was inspired by [this blogpost](http://www.hydrogen18.com/blog/your-own-pki-tls-golang.html).
 
-### Install EasyRSA
+#### Install EasyRSA
 
 	git clone https://github.com/OpenVPN/easy-rsa.git example-ca
 	chmod 700 example-ca
@@ -29,19 +31,19 @@ CNC and minion use TLS to communicate with each other. Use your own CA to sign t
 	rm -rf .git
 
 
-### Create CA
+#### Create CA
 
 	./easyrsa init-pki
 
 Its important that you set a passphrase for your CA's private key
 
-### Create server cert
+#### Create server cert
 
 	./easyrsa build-server-full localhost nopass
 
 Replace localhost with the hostname of the server that runs the CNC.
 
-### Create minion certificate
+#### Create minion certificate
 
 	./easyrsa build-client-full 'client0' nopass
 
@@ -51,7 +53,27 @@ Create one certificate for each minion instance. Replace 'client0' with some des
 
 TODO
 
+#### CNC
+
+TODO
+
+#### minion
+
+TODO
+
 ## Using Pulse
+
+TODO
+
+#### DNS test
+
+TODO
+
+#### HTTP test
+
+TODO
+
+#### mtr/traceroute
 
 TODO
 
