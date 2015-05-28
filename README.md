@@ -65,15 +65,17 @@ Its important that all minions can reach port 7777 on the server, and all users 
 
 #### minion
 
-usage : `./minion -ca="/path/to/ca.crt" -crt="/path/to/minion.crt" -key="/path/to/minion.key"`
+usage : `./minion -ca="/path/to/ca.crt" -crt="/path/to/minion.crt" -key="/path/to/minion.key" -cnc="cnc.host.name:7777"`
 
-Note: `minion.crt` and `minion.key` is the certificate/key generated using the `build-client-full` command.
+Note: `minion.crt` and `minion.key` is the certificate/key generated using the `build-client-full` command. `cnc.host.name` is the hostname of the CNC
 
 Use one client certificate exclusive to one minion.
 
 ## Using Pulse
 
-visit http://[cnc hostname]/agents/ for a listing of online agents.
+Visit http://cnc.host.name:7778/agents/ for a listing of currently online agents.
+
+http://cnc.host.name:7778/ contains a rough demo UI to run tests.
 
 #### DNS test
 
