@@ -2,7 +2,7 @@
 
 Pulse is a tool to run network diagnostics in a distributed manner. It is made up of 2 components.
 
-- CNC : This is the Command & Control server. User make http requests to it describing the test they want to run. CNC then  runs it on all minions, gathers the response and then returns them to the user.
+- CNC : This is the Command & Control server. Users make http requests to it describing the test they want to run. CNC then runs it across all minions, gathers the response and then returns them to the user.
 Dependencies : mongodb (I might replace it with something lighter, or make it optional) 
 
 - minion - This is the agent that runs at places where you want to debug from. It makes a TLS connection to CNC and waits for incoming test requests to be executed.
@@ -51,19 +51,27 @@ Create one certificate for each minion instance. Replace 'client0' with some des
 
 ## Running Pulse
 
-TODO
-
 #### CNC
 
-TODO
+The CNC needs mongodb running on localhost. This requirement will be removed in future releases. Mongo is only used for storing metadata about minions.
+
+usage : `./cnc -ca="/path/to/ca.crt" -crt="/path/to/server.crt" -key="/path/to/server.key"`
+
+Note: `server.crt` and `server.key` is the certificate/key generated using the `build-server-full` command.
+
+Its important that all minions can reach port 7777 on the server, and all users can reach port 7778.
 
 #### minion
 
-TODO
+usage : `./minion -ca="/path/to/ca.crt" -crt="/path/to/minion.crt" -key="/path/to/minion.key"`
+
+Note: `minion.crt` and `minion.key` is the certificate/key generated using the `build-client-full` command.
+
+Use one client certificate exclusive to one minion.
 
 ## Using Pulse
 
-TODO
+visit http://[cnc hostname]/agents/ for a listing of online agents.
 
 #### DNS test
 
