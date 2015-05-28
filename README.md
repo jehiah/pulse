@@ -51,6 +51,8 @@ Create one certificate for each minion instance. Replace 'client0' with some des
 
 ## Running Pulse
 
+Its important that system times are correct. If not then TLS might not work correctly.
+
 #### CNC
 
 The CNC needs mongodb running on localhost. This requirement will be removed in future releases. Mongo is only used for storing metadata about minions.
