@@ -3,10 +3,15 @@ package pulse
 //Inspired by http://www.hydrogen18.com/blog/your-own-pki-tls-golang.html
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/pem"
+	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 )
 
 func loadCertificates(caFile, certificateFile, privateKeyFile string) (tls.Certificate, *x509.CertPool) {
@@ -58,4 +63,62 @@ func GetTLSConfig(caFile, certificateFile, privateKeyFile string) *tls.Config {
 	//Don't allow session resumption
 	config.SessionTicketsDisabled = true
 	return config
+}
+
+func GeneratePrivKeyFile(fname string) {
+	pk, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		log.Fatal(err)
+	}
+	blk := &pem.Block{
+		Type:  "PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(pk),
+	}
+	f, err := os.Create(fname)
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = f.Write(pem.EncodeToMemory(blk))
+	if err != nil {
+		log.Fatal(err)
+	}
+	f.Close()
+}
+
+func PrintCertRequest(privfname string) {
+	privraw, err := ioutil.ReadFile(privfname)
+	if err != nil {
+		log.Fatal(err)
+	}
+	blk, _ := pem.Decode(privraw)
+	pk, err := x509.ParsePKCS1PrivateKey(blk.Bytes)
+	if err != nil {
+		log.Fatal(err)
+	}
+	pub, err := x509.MarshalPKIXPublicKey(pk.Public())
+	if err != nil {
+		log.Fatal(err)
+	}
+	blkpub := &pem.Block{
+		Type:  "PUBLIC KEY",
+		Bytes: pub,
+	}
+	f, err := os.Create("minion.crt.request")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Fill and send following form to your Pulse host :-")
+	outstr := "-------------- BEGIN EMAIL---------------------\n\n"
+	outstr += "Agent Name       : ________________________________\n"
+	outstr += "Country          : ________________________________\n"
+	outstr += "State            : ________________________________\n"
+	outstr += "ISP Resolver IPs : ________________________________\n\n"
+	outstr += string(pem.EncodeToMemory(blkpub))
+	outstr += "\n---------------- END EMAIL---------------------\n"
+	fmt.Println(outstr)
+	f.Write([]byte(outstr))
+	if err != nil {
+		log.Fatal(err)
+	}
+	f.Close()
 }

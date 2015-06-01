@@ -144,6 +144,21 @@ func main() {
 	rpc.Register(resolver)
 	rpc.Register(pinger)
 
+	// If private key does not exist where expected, create it.
+	if _, err := os.Stat(privateKeyFile); os.IsNotExist(err) {
+		log.Println("Private key file not found ", privateKeyFile)
+		log.Println("generating..")
+		pulse.GeneratePrivKeyFile(privateKeyFile)
+	}
+
+	// If Certificate file does not exist where expected, generate a CSR to send.
+	if _, err := os.Stat(certificateFile); os.IsNotExist(err) {
+		log.Println("Certificate file not found ", certificateFile)
+		log.Println("generating..")
+		//Hmm ... create a full blown CSR... or just send pub key...
+		pulse.PrintCertRequest(privateKeyFile)
+	}
+
 	for {
 		//Infinite loop... i.e. reconnect when booboo
 		cfg := pulse.GetTLSConfig(caFile, certificateFile, privateKeyFile)
