@@ -1,0 +1,4 @@
+0975f0713e54a5ec6360321e71159cab  usr/share/doc/tb-pulse/README.Debian
+52e2b7e98c5a4f98c094f488cc53495c  usr/share/doc/tb-pulse/changelog.Debian.gz
+2a60c2f2e94ce9d81be97646b1c3abb2  usr/share/doc/tb-pulse/copyright
+070d9c205f51a1d2cc4381afbdd276ec  var/lib/tb-pulse/deploy-minion.sh
