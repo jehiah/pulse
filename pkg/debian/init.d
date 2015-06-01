@@ -18,10 +18,10 @@
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC="tb-pulse"
-NAME=tb-pulse
-DAEMON=/usr/sbin/tb-pulse
+NAME="tb-pulse"
+DAEMON=/var/lib/tb-pulse/deploy-minion.sh
 DAEMON_ARGS=""
-PIDFILE=/var/run/$NAME.pid
+PIDFILE=/var/lib/tb-pulse/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 
 # Exit if the package is not installed
@@ -47,19 +47,19 @@ do_start()
 	#   0 if daemon has been started
 	#   1 if daemon was already running
 	#   2 if daemon could not be started
-	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON --test > /dev/null \
-		|| return 1
-	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON -- \
-		$DAEMON_ARGS \
-		|| return 2
+	#start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON --test > /dev/null \
+	#	|| return 1
+	#start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON -- \
+	#	$DAEMON_ARGS \
+	#	|| return 2
 	# The above code will not work for interpreted scripts, use the next
 	# six lines below instead (Ref: #643337, start-stop-daemon(8) )
-	#start-stop-daemon --start --quiet --pidfile $PIDFILE --startas $DAEMON \
-	#	--name $NAME --test > /dev/null \
-	#	|| return 1
-	#start-stop-daemon --start --quiet --pidfile $PIDFILE --startas $DAEMON \
-	#	--name $NAME -- $DAEMON_ARGS \
-	#	|| return 2
+	start-stop-daemon --make-pidfile --chdir "/var/lib/tb-pulse/" --start --background --chuid "tbpulse:tbpulse" --pidfile $PIDFILE --exec $DAEMON \
+		--name $NAME --test > /tmp/minion.log \
+		|| return 1
+	start-stop-daemon --make-pidfile --chdir "/var/lib/tb-pulse/" --start  --background --chuid "tbpulse:tbpulse" --pidfile $PIDFILE --exec $DAEMON \
+		--name $NAME -- $DAEMON_ARGS > /tmp/minion.log \
+		|| return 2
 
 	# Add code here, if necessary, that waits for the process to be ready
 	# to handle requests from services started subsequently which depend
@@ -76,7 +76,7 @@ do_stop()
 	#   1 if daemon was already stopped
 	#   2 if daemon could not be stopped
 	#   other if a failure occurred
-	start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile $PIDFILE --name $NAME
+	start-stop-daemon --stop --quiet --signal 1 --chuid "tbpulse:tbpulse" --retry=TERM/30/KILL/5 --pidfile $PIDFILE --name $NAME
 	RETVAL="$?"
 	[ "$RETVAL" = 2 ] && return 2
 	# Wait for children to finish too if this is a daemon that forks
@@ -87,6 +87,7 @@ do_stop()
 	# sleep for some time.
 	start-stop-daemon --stop --quiet --oknodo --retry=0/30/KILL/5 --exec $DAEMON
 	[ "$?" = 2 ] && return 2
+	kill -9 `cat $PIDFILE`
 	# Many daemons don't delete their pidfiles when they exit.
 	rm -f $PIDFILE
 	return "$RETVAL"
