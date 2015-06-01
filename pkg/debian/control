@@ -10,6 +10,6 @@ Homepage: https://pulse.turbobytes.com/
 
 Package: tb-pulse
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, curl, mtr-tiny
-Description: <insert up to 60 chars description>
- <insert long description, indented with spaces>
+Multi-Arch: same
+Depends: ${shlibs:Depends}, ${misc:Depends}, curl, mtr-tiny | mtr, ca-certificates
+Description: TurboBytes Pulse agent 

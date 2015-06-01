@@ -3,9 +3,9 @@ Version: 0.7-1
 Architecture: amd64
 Maintainer: Sajal Kayan <sajal@turbobytes.com>
 Installed-Size: 56
-Depends: curl, mtr-tiny
+Depends: curl, mtr-tiny | mtr, ca-certificates
 Section: unknown
 Priority: optional
+Multi-Arch: same
 Homepage: https://pulse.turbobytes.com/
-Description: <insert up to 60 chars description>
- <insert long description, indented with spaces>
+Description: TurboBytes Pulse agent
