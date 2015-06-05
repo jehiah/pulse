@@ -17,7 +17,7 @@ func islocalip(ip net.IP) bool {
 		for _, cidr := range localipv4 {
 			_, inet, _ := net.ParseCIDR(cidr)
 			if inet.Contains(ipv4) {
-				return false
+				return true
 			}
 		}
 	}
@@ -26,7 +26,7 @@ func islocalip(ip net.IP) bool {
 		for _, cidr := range localipv6 {
 			_, inet, _ := net.ParseCIDR(cidr)
 			if inet.Contains(ipv6) {
-				return false
+				return true
 			}
 		}
 	}
