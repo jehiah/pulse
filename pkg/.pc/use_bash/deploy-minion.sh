@@ -1,12 +1,11 @@
-#!/bin/bash
+#!/bin/sh
 
 #Run this with OS and ARCH defined in enviornment....
 #OS="linux" ARCH="amd64" ./deploy-minion.sh  2>&1 | logger -t minion &
 
 #Check if minion is latest or not...
 
-function main_function
-{
+main_function {
 	#Some autodetction for OS...
 	if [ "$OS" = "" ]; then
 		unamestr=`uname`

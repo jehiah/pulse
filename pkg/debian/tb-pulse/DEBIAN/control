@@ -1,9 +1,9 @@
 Package: tb-pulse
-Version: 0.7-3
+Version: 0.7-5
 Architecture: all
 Maintainer: Sajal Kayan <sajal@turbobytes.com>
 Installed-Size: 56
-Depends: curl, mtr-tiny | mtr, ca-certificates
+Depends: curl, mtr-tiny | mtr, ca-certificates, bash
 Section: unknown
 Priority: optional
 Homepage: https://pulse.turbobytes.com/

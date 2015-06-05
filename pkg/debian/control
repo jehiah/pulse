@@ -10,5 +10,5 @@ Homepage: https://pulse.turbobytes.com/
 
 Package: tb-pulse
 Architecture: all
-Depends: ${misc:Depends}, curl, mtr-tiny | mtr, ca-certificates
+Depends: ${misc:Depends}, curl, mtr-tiny | mtr, ca-certificates, bash
 Description: TurboBytes Pulse agent 

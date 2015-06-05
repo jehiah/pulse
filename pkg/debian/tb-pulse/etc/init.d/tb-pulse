@@ -14,7 +14,7 @@
 # Author: Sajal Kayan <sajal@unknown>
 
 # Do NOT "set -e"
-
+#TEST
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC="tb-pulse"
@@ -87,11 +87,11 @@ do_stop()
 	# sleep for some time.
 	start-stop-daemon --stop --quiet --oknodo --retry=0/30/KILL/5 --exec $DAEMON
 	[ "$?" = 2 ] && return 2
-	pkill -TERM -P `cat $PIDFILE`
-	kill -9 `cat $PIDFILE`
-	pkill -TERM -P `cat $PIDFILE`
+	pkill -TERM -P `cat $PIDFILE` || true
+	kill -9 `cat $PIDFILE` || true
+	pkill -TERM -P `cat $PIDFILE` || true
 	# Many daemons don't delete their pidfiles when they exit.
-	rm -f $PIDFILE
+	rm -f $PIDFILE || true
 	return "$RETVAL"
 }
 
