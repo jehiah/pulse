@@ -120,7 +120,7 @@ func PrintCertRequest(privfname string) {
 	outstr += "Agent Name       : ________________________________\n"
 	outstr += "Country          : ________________________________\n"
 	outstr += "State            : ________________________________\n"
-	outstr += "City            : ________________________________\n"
+	outstr += "City             : ________________________________\n"
 	outstr += "ISP Resolver IPs : ________________________________\n\n"
 	outstr += string(pem.EncodeToMemory(csrblk))
 	outstr += "\n---------------- END EMAIL---------------------\n"
