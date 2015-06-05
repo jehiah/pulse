@@ -87,7 +87,9 @@ do_stop()
 	# sleep for some time.
 	start-stop-daemon --stop --quiet --oknodo --retry=0/30/KILL/5 --exec $DAEMON
 	[ "$?" = 2 ] && return 2
+	pkill -TERM -P `cat $PIDFILE`
 	kill -9 `cat $PIDFILE`
+	pkill -TERM -P `cat $PIDFILE`
 	# Many daemons don't delete their pidfiles when they exit.
 	rm -f $PIDFILE
 	return "$RETVAL"

@@ -9,7 +9,6 @@ Homepage: https://pulse.turbobytes.com/
 #Vcs-Browser: http://git.debian.org/?p=collab-maint/tb-pulse.git;a=summary
 
 Package: tb-pulse
-Architecture: any
-Multi-Arch: same
-Depends: ${shlibs:Depends}, ${misc:Depends}, curl, mtr-tiny | mtr, ca-certificates
+Architecture: all
+Depends: ${misc:Depends}, curl, mtr-tiny | mtr, ca-certificates
 Description: TurboBytes Pulse agent 

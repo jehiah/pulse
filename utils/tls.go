@@ -7,6 +7,7 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
@@ -95,14 +96,21 @@ func PrintCertRequest(privfname string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	pub, err := x509.MarshalPKIXPublicKey(pk.Public())
+
+	template := &x509.CertificateRequest{
+		Subject: pkix.Name{CommonName: "Unnamed-Agent"}, //TODO Randomize maybe
+		SignatureAlgorithm: x509.SHA256WithRSA,
+	}
+
+	csr, err := x509.CreateCertificateRequest(rand.Reader, template, pk)
 	if err != nil {
 		log.Fatal(err)
 	}
-	blkpub := &pem.Block{
-		Type:  "PUBLIC KEY",
-		Bytes: pub,
+	csrblk := &pem.Block{
+		Type:  "CERTIFICATE REQUEST",
+		Bytes: csr,
 	}
+
 	f, err := os.Create("minion.crt.request")
 	if err != nil {
 		log.Fatal(err)
@@ -112,8 +120,9 @@ func PrintCertRequest(privfname string) {
 	outstr += "Agent Name       : ________________________________\n"
 	outstr += "Country          : ________________________________\n"
 	outstr += "State            : ________________________________\n"
+	outstr += "City            : ________________________________\n"
 	outstr += "ISP Resolver IPs : ________________________________\n\n"
-	outstr += string(pem.EncodeToMemory(blkpub))
+	outstr += string(pem.EncodeToMemory(csrblk))
 	outstr += "\n---------------- END EMAIL---------------------\n"
 	fmt.Println(outstr)
 	f.Write([]byte(outstr))

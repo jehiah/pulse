@@ -1,5 +1,18 @@
+
+tb-pulse (0.7-3) unstable; urgency=low
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- Sajal Kayan <sajal@turbobytes.com>  Mon, 01 Jun 2015 15:03:32 -0700
+
+tb-pulse (0.7-2) unstable; urgency=low
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- Sajal Kayan <sajal@unknown>  Mon, 01 Jun 2015 14:50:32 -0700
+
 tb-pulse (0.7-1) unstable; urgency=low
 
   * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
 
- -- Sajal Kayan <sajal@unknown>  Mon, 01 Jun 2015 11:53:43 -0700
+ -- Sajal Kayan <sajal@unknown>  Mon, 01 Jun 2015 14:40:32 -0700
