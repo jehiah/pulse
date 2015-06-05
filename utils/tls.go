@@ -98,7 +98,7 @@ func PrintCertRequest(privfname string) {
 	}
 
 	template := &x509.CertificateRequest{
-		Subject: pkix.Name{CommonName: "Unnamed-Agent"}, //TODO Randomize maybe
+		Subject:            pkix.Name{CommonName: "Unnamed-Agent"}, //TODO Randomize maybe
 		SignatureAlgorithm: x509.SHA256WithRSA,
 	}
 
