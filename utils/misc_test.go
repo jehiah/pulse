@@ -6,7 +6,7 @@ import (
 )
 
 func TestPublicIP(t *testing.T) {
-	cases_public := []string{"8.8.8.8", "1.1.1.1", "45.45.45.45", "120.222.111.222", "2404:6800:4003:c01::64"}
+	cases_public := []string{"8.8.8.8", "74.125.130.100", "1.1.1.1", "45.45.45.45", "120.222.111.222", "2404:6800:4003:c01::64"}
 	for _, ipstr := range cases_public {
 		ip := net.ParseIP(ipstr)
 		v := islocalip(ip)

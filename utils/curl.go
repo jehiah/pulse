@@ -39,7 +39,8 @@ func (md *MyDialer) Dial(network, address string) (net.Conn, error) {
 		md.RemoteStr = con.RemoteAddr().String()
 		a, _ := con.RemoteAddr().(*net.TCPAddr)
 
-		if !islocalip(a.IP) {
+		if islocalip(a.IP) {
+			fmt.Println(a.IP)
 			con.Close()
 			return nil, securityerr
 		}
