@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/turbobytes/pulse.png?branch=master)](https://travis-ci.org/turbobytes/pulse)
+
 # TurboBytes Pulse
 
 Pulse is a tool to run network diagnostics in a distributed manner. It is made up of 2 components.
