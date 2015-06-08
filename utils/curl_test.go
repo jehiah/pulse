@@ -25,6 +25,23 @@ func TestCurlS3(t *testing.T) {
 	}
 }
 
+//Tests if we can override host header...
+func TestCurlInvalidS3(t *testing.T) {
+	req := &CurlRequest{
+		Path:     "/tb-minion/latest",
+		Endpoint: "s3.amazonaws.com",
+		Host:     "www.turbobytes.com", //Bogus Host header not configured with S3
+		Ssl:      false,
+	}
+	resp := CurlImpl(req)
+	if resp.Err != "" {
+		t.Error(resp.Err)
+	}
+	if resp.Status != 404 {
+		t.Error("Status should be 404... got ", resp.Status)
+	}
+}
+
 //Tests if a local url is being blocked correctly or not...
 func TestCurlLocalBlock(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
