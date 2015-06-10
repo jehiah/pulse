@@ -254,6 +254,16 @@ func (tracker *Tracker) WorkerJson() []byte {
 	return data
 }
 
+//Repopulate the worker info from db... without having to disconnect
+func (tracker *Tracker) Repopulate() {
+	tracker.workerlock.Lock()
+	defer tracker.workerlock.Unlock()
+	for _, w := range tracker.workers {
+		populatedata(w)
+	}
+
+}
+
 func (tracker *Tracker) Runner(req *pulse.CombinedRequest) []*pulse.CombinedResult {
 	tracker.workerlock.RLock()
 	defer tracker.workerlock.RUnlock()
@@ -410,6 +420,12 @@ func agentshandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(tracker.WorkerJson())
 }
 
+func repopulatehandler(w http.ResponseWriter, r *http.Request) {
+	//w.Header().Set("Content-Type", "application/json")
+	tracker.Repopulate()
+	w.Write([]byte("DONE"))
+}
+
 func runmtr(w http.ResponseWriter, r *http.Request) {
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -533,6 +549,7 @@ func main() {
 		http.HandleFunc("/curl/", makeGzipHandler(runcurl))
 		http.HandleFunc("/mtr/", makeGzipHandler(runmtr))
 		http.HandleFunc("/agents/", makeGzipHandler(agentshandler))
+		http.HandleFunc("/repopulate/", makeGzipHandler(repopulatehandler))
 
 		log.Fatal(http.ListenAndServe(":7778", nil))
 
