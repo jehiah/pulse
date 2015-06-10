@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/turbobytes/pulse/utils"
+	"io"
 	"io/ioutil"
 	"log"
 	"net"
@@ -143,6 +144,26 @@ func main() {
 	pinger = &Pinger{}
 	rpc.Register(resolver)
 	rpc.Register(pinger)
+
+	// If CA certificate does not exist where expected, download from S3
+	if _, err := os.Stat(caFile); os.IsNotExist(err) {
+		log.Println("CA cert not found ", privateKeyFile)
+		log.Println("downloading..")
+		resp, err := http.Get("https://s3.amazonaws.com/tb-minion/ca.crt")
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != 200 {
+			log.Fatal("Status was not 200!")
+		}
+		f, err := os.Create(caFile)
+		_, err = io.Copy(f, resp.Body)
+		f.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 
 	// If private key does not exist where expected, create it.
 	if _, err := os.Stat(privateKeyFile); os.IsNotExist(err) {
