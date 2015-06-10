@@ -42,6 +42,7 @@ type AgentInfo struct {
 	HostWebsite     string
 	HostDescription string
 	HostCompanyLogo string
+	HostType        string // H = Home, O = Office, D = Datacenter
 	FirstOnline     string
 	LatLng          string //TODO: make richer?
 }
@@ -58,6 +59,7 @@ func (agent *AgentInfo) GetBSON() (interface{}, error) {
 		{"HostEmail", agent.HostEmail},
 		{"HostWebsite", agent.HostWebsite},
 		{"HostDescription", agent.HostDescription},
+		{"HostType", agent.HostType},
 		{"HostCompanyLogo", agent.HostCompanyLogo},
 		{"FirstOnline", agent.FirstOnline},
 		{"LatLng", agent.LatLng},
@@ -82,6 +84,7 @@ func (agent *AgentInfo) SetBSON(raw bson.Raw) error {
 	agent.HostWebsite = data["HostWebsite"]
 	agent.HostDescription = data["HostDescription"]
 	agent.HostCompanyLogo = data["HostCompanyLogo"]
+	agent.HostType = data["HostType"]
 	agent.FirstOnline = data["FirstOnline"]
 	agent.LatLng = data["LatLng"]
 	return nil
@@ -102,6 +105,7 @@ type Worker struct {
 	HostCompanyLogo string
 	HostWebsite     string
 	HostDescription string
+	HostType        string
 	//LatLng          string //TODO: make richer?
 }
 
@@ -139,6 +143,7 @@ func populatedata(w *Worker) {
 	w.HostDescription = agent.HostDescription
 	w.HostCompanyLogo = agent.HostCompanyLogo
 	w.HostWebsite = agent.HostWebsite
+	w.HostType = agent.HostType
 	if agent.FirstOnline == "" {
 		//The first time it actually came online...
 		log.Println("This is first time agent came online ", agent.SerialNumber)
