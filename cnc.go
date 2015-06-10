@@ -139,6 +139,12 @@ func populatedata(w *Worker) {
 	w.HostDescription = agent.HostDescription
 	w.HostCompanyLogo = agent.HostCompanyLogo
 	w.HostWebsite = agent.HostWebsite
+	if agent.FirstOnline == "" {
+		//The first time it actually came online...
+		log.Println("This is first time agent came online ", agent.SerialNumber)
+		agent.FirstOnline = time.Now().UTC().String()
+		c.UpdateId(agent.SerialNumber.String(), bson.M{"$set": bson.M{"FirstOnline": agent.FirstOnline}})
+	}
 }
 
 func NewWorker(conn net.Conn) *Worker {
