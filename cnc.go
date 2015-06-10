@@ -31,12 +31,19 @@ var session *mgo.Session
 
 //AgentInfo is what we store in db...
 type AgentInfo struct {
-	Name           string
-	City           string
-	State          string
-	Country        string
-	SerialNumber   *big.Int
-	LocalResolvers []string
+	Name            string
+	City            string
+	State           string
+	Country         string
+	SerialNumber    *big.Int
+	LocalResolvers  []string
+	HostName        string
+	HostEmail       string
+	HostWebsite     string
+	HostDescription string
+	HostCompanyLogo string
+	FirstOnline     string
+	LatLng          string //TODO: make richer?
 }
 
 func (agent *AgentInfo) GetBSON() (interface{}, error) {
@@ -47,6 +54,13 @@ func (agent *AgentInfo) GetBSON() (interface{}, error) {
 		{"Country", agent.Country},
 		{"LocalResolvers", strings.Join(agent.LocalResolvers, ",")},
 		{"_id", agent.SerialNumber.String()},
+		{"HostName", agent.HostName},
+		{"HostEmail", agent.HostEmail},
+		{"HostWebsite", agent.HostWebsite},
+		{"HostDescription", agent.HostDescription},
+		{"HostCompanyLogo", agent.HostCompanyLogo},
+		{"FirstOnline", agent.FirstOnline},
+		{"LatLng", agent.LatLng},
 	}, nil
 }
 
@@ -63,21 +77,32 @@ func (agent *AgentInfo) SetBSON(raw bson.Raw) error {
 	agent.LocalResolvers = strings.Split(data["LocalResolvers"], ",")
 	agent.SerialNumber = new(big.Int)
 	agent.SerialNumber.SetString(data["_id"], 10)
+	agent.HostName = data["HostName"]
+	agent.HostEmail = data["HostEmail"]
+	agent.HostWebsite = data["HostWebsite"]
+	agent.HostDescription = data["HostDescription"]
+	agent.HostCompanyLogo = data["HostCompanyLogo"]
+	agent.FirstOnline = data["FirstOnline"]
+	agent.LatLng = data["LatLng"]
 	return nil
 }
 
 type Worker struct {
-	Client    *rpc.Client `json:"date"`
-	IP        string      `json:"date"`
-	Geo       string      //TODO: Make richer
-	Resolvers []string    //List of resolvers this worker supports
-	Name      string
-	ASN       *string
-	ASName    *string
-	State     string
-	Country   string
-	City      string
-	Serial    *big.Int
+	Client          *rpc.Client `json:"date"`
+	IP              string      `json:"date"`
+	Geo             string      //TODO: Make richer
+	Resolvers       []string    //List of resolvers this worker supports
+	Name            string
+	ASN             *string
+	ASName          *string
+	State           string
+	Country         string
+	City            string
+	Serial          *big.Int
+	HostCompanyLogo string
+	HostWebsite     string
+	HostDescription string
+	//LatLng          string //TODO: make richer?
 }
 
 func getasn(ip string) (*string, *string) {
@@ -98,6 +123,7 @@ func populatedata(w *Worker) {
 	if err == mgo.ErrNotFound {
 		agent.Name = w.Name
 		agent.SerialNumber = w.Serial
+		agent.FirstOnline = time.Now().UTC().String()
 		err1 := c.Insert(agent)
 		if err1 != nil {
 			log.Fatal(err1)
@@ -110,6 +136,9 @@ func populatedata(w *Worker) {
 	w.State = agent.State
 	w.Country = agent.Country
 	w.Resolvers = agent.LocalResolvers
+	w.HostDescription = agent.HostDescription
+	w.HostCompanyLogo = agent.HostCompanyLogo
+	w.HostWebsite = agent.HostWebsite
 }
 
 func NewWorker(conn net.Conn) *Worker {
