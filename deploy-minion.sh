@@ -20,6 +20,10 @@ if [ "$ARCH" = "" ]; then
 	if [ "$unamestr" = 'x86_64' ]; then
 	   ARCH='amd64'
 	fi
+	#Match 386
+	if [ "$unamestr" = 'i686' ]; then
+	   ARCH='386'
+	fi
 	#Matches rpi debian
 	if [ "$unamestr" = 'armv6l' ]; then
 	   ARCH='arm'
