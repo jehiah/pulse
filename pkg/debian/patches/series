@@ -3,3 +3,4 @@ logging
 syslog
 use_bash
 386
+use-GPG-for-validating
