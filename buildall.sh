@@ -2,6 +2,13 @@
 
 VERSION="1.0.31"
 LDFLAGS="-X main.version $VERSION"
+KEY=$1 #The key to sign the package with
+
+if [ "$KEY" = "" ]; then
+	echo "Must provide gpg signing key"
+	exit 1
+fi
+
 set -o xtrace
 
 for ARCH in amd64 arm 386
@@ -13,6 +20,7 @@ do
 			GOOS="$OS" GOARCH="$ARCH" go build -ldflags "$LDFLAGS" -o minion minion.go
 			tar -czf "minion.$OS.$ARCH.tar.gz" minion
 			sha256sum "minion.$OS.$ARCH.tar.gz" >  "minion.$OS.$ARCH.tar.gz.sha256sum"
+			gpg --default-key $KEY --output "minion.$OS.$ARCH.tar.gz.sig" --detach-sig "minion.$OS.$ARCH.tar.gz"
 			rm minion
 		fi
 	done
