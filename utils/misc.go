@@ -7,7 +7,7 @@ import (
 
 var (
 	localipv4   = []string{"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "169.254.0.0/16", "127.0.0.0/8", "100.64.0.0/10"}
-	localipv6   = []string{"fd00::/8"}
+	localipv6   = []string{"fc00::/7", "::1/128"}
 	securityerr = errors.New("Security error: Not allowed to connect to local IP")
 )
 

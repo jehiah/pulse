@@ -17,7 +17,7 @@ func TestPublicIP(t *testing.T) {
 }
 
 func TestLocalIP(t *testing.T) {
-	cases_private := []string{"127.0.0.1", "10.5.6.4", "192.168.5.99", "100.66.55.66", "fd07:a47c:3742:823e:3b02:76:982b:463"}
+	cases_private := []string{"127.0.0.1", "10.5.6.4", "192.168.5.99", "100.66.55.66", "fd07:a47c:3742:823e:3b02:76:982b:463", "::1"}
 	for _, ipstr := range cases_private {
 		ip := net.ParseIP(ipstr)
 		v := islocalip(ip)
