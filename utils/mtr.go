@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"log"
 	"os/exec"
+	"strings"
 )
 
 type MtrResult struct {
@@ -16,8 +17,15 @@ type MtrRequest struct {
 }
 
 func MtrImpl(r *MtrRequest) *MtrResult {
-	//TODO: validate r.Target before sending
-	cmd := exec.Command("mtr", "--report-wide", "--report", r.Target)
+	//Validate r.Target before sending
+	tgt := strings.Trim(r.Target, "\n \r") //Trim whitespace
+	if strings.Contains(tgt, " ") {        //Ensure it doesnt contain space
+		return &MtrResult{"", "Invalid hostname"}
+	}
+	if strings.HasPrefix(tgt, "-") { //Ensure it doesnt start with -
+		return &MtrResult{"", "Invalid hostname"}
+	}
+	cmd := exec.Command("mtr", "--report-wide", "--report", tgt)
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	log.Println(cmd)
