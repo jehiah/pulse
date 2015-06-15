@@ -135,7 +135,7 @@ example :-
 	}
 
 * `Target` : The hostname/ip we want to trace to.
-* `IPv` : Optional. Set it to "4" or "6" to pass the -4 or -6 argument to mtr.
+* `IPv` : Optional. Set it to "4" or "6" to pass the `-4` or `-6` argument to mtr.
 
 ## Create new test types
 
