@@ -14,6 +14,7 @@ type MtrResult struct {
 
 type MtrRequest struct {
 	Target string
+	IPv    string //blank for auto, 4 for IPv4, 6 for IPv6
 }
 
 func MtrImpl(r *MtrRequest) *MtrResult {
@@ -25,7 +26,16 @@ func MtrImpl(r *MtrRequest) *MtrResult {
 	if strings.HasPrefix(tgt, "-") { //Ensure it doesnt start with -
 		return &MtrResult{"", "Invalid hostname"}
 	}
-	cmd := exec.Command("mtr", "--report-wide", "--report", tgt)
+	var cmd *exec.Cmd
+	switch r.IPv {
+	case "4":
+		cmd = exec.Command("mtr", "--report-wide", "--report", "-4", tgt)
+	case "6":
+		cmd = exec.Command("mtr", "--report-wide", "--report", "-6", tgt)
+	default:
+		cmd = exec.Command("mtr", "--report-wide", "--report", tgt)
+	}
+
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	log.Println(cmd)
