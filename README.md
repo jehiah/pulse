@@ -93,9 +93,9 @@ example :-
 		"Targets": ["8.8.8.8", "8.8.4.4"]
 	}
 
-`Host` : The hostname we want to resolve
-`QType` : Dns [query type](http://en.wikipedia.org/wiki/List_of_DNS_record_types#Resource_records)
-`Targets` : The nameservers we want to query
+* `Host` : The hostname we want to resolve
+* `QType` : Dns [query type](http://en.wikipedia.org/wiki/List_of_DNS_record_types#Resource_records)
+* `Targets` : The nameservers we want to query
 
 #### HTTP test
 
@@ -112,10 +112,10 @@ example :-
 		"Ssl": false
 	}
 
-`Path` : The URI to test
-`Endpoint` : The server to connect to.
-`Host` : The contents of the Host header. If blank then endpoint's value is used here.
-`Ssl` : Weather to talk SSL/TLS or plaintext.
+* `Path` : The URI to test
+* `Endpoint` : The server to connect to.
+* `Host` : The contents of the Host header. If blank then endpoint's value is used here.
+* `Ssl` : Weather to talk SSL/TLS or plaintext.
 
 The HTTP test makes a GET request to the target and once the headers come in, it terminates the connection without consuming the full body. This is by design so as to not consume too much bandwidth.
 
@@ -130,10 +130,12 @@ Payload: Json object
 example :-
 
 	{
-		"Target": "example.com"
+		"Target": "example.com",
+		"IPv" : "6"
 	}
 
-`Target` : The hostname/ip we want to trace to.
+* `Target` : The hostname/ip we want to trace to.
+* `IPv` : Optional. Set it to "4" or "6" to pass the -4 or -6 argument to mtr.
 
 ## Create new test types
 
