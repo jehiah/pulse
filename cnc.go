@@ -120,11 +120,11 @@ func getasn(ip string) (*string, *string) {
 	return nil, nil
 }
 
-func populatedata(w *Worker) {
+func populatedata(w *Worker, insertfirst bool) {
 	c := session.DB("dnsdist").C("agents")
 	agent := new(AgentInfo)
 	err := c.Find(bson.M{"_id": w.Serial.String()}).One(agent)
-	if err == mgo.ErrNotFound {
+	if err == mgo.ErrNotFound && insertfirst {
 		agent.Name = w.Name
 		agent.SerialNumber = w.Serial
 		agent.FirstOnline = time.Now().UTC().String()
@@ -133,7 +133,8 @@ func populatedata(w *Worker) {
 			log.Fatal(err1)
 		}
 	} else if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 	w.Name = agent.Name
 	w.City = agent.City
@@ -144,7 +145,7 @@ func populatedata(w *Worker) {
 	w.HostCompanyLogo = agent.HostCompanyLogo
 	w.HostWebsite = agent.HostWebsite
 	w.HostType = agent.HostType
-	if agent.FirstOnline == "" {
+	if agent.FirstOnline == "" && insertfirst {
 		//The first time it actually came online...
 		log.Println("This is first time agent came online ", agent.SerialNumber)
 		agent.FirstOnline = time.Now().UTC().String()
@@ -172,7 +173,7 @@ func NewWorker(conn net.Conn) *Worker {
 				log.Println(serial)
 				w.Serial = serial
 				log.Println(w)
-				populatedata(w)
+				populatedata(w, true)
 				log.Println(w)
 				return w
 			}
@@ -264,7 +265,7 @@ func (tracker *Tracker) Repopulate() {
 	tracker.workerlock.Lock()
 	defer tracker.workerlock.Unlock()
 	for _, w := range tracker.workers {
-		populatedata(w)
+		populatedata(w, true)
 	}
 
 }
@@ -422,7 +423,27 @@ func runcurl(w http.ResponseWriter, r *http.Request) {
 
 func agentshandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(tracker.WorkerJson())
+	splitted := strings.Split(r.URL.Path, "/")
+	if len(splitted) == 4 {
+		agentid := splitted[2]
+		wrk := new(Worker)
+		wrk.Serial = new(big.Int)
+		wrk.Serial.SetString(agentid, 10)
+		populatedata(wrk, false)
+		if wrk.Name == "" {
+			w.WriteHeader(404)
+			return
+		}
+		b, err := json.MarshalIndent(wrk, "", "  ")
+		if err != nil {
+			w.WriteHeader(404)
+			return
+		} else {
+			w.Write(b)
+		}
+	} else {
+		w.Write(tracker.WorkerJson())
+	}
 }
 
 func repopulatehandler(w http.ResponseWriter, r *http.Request) {
