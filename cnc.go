@@ -7,6 +7,7 @@ import (
 	"crypto/tls"
 	"encoding/gob"
 	"encoding/json"
+	"errors"
 	"flag"
 	"github.com/abh/geoip"
 	"github.com/miekg/dns"
@@ -93,10 +94,10 @@ func (agent *AgentInfo) SetBSON(raw bson.Raw) error {
 }
 
 type Worker struct {
-	Client    *rpc.Client `json:"date"`
-	IP        string      `json:"date"`
-	Geo       string      //TODO: Make richer
-	Resolvers []string    //List of resolvers this worker supports
+	Client *rpc.Client `json:"date"`
+	IP     string      `json:"date"`
+	//Geo       string      //TODO: Make richer
+	Resolvers []string //List of resolvers this worker supports
 	Name      string
 	ASN       *string
 	ASName    *string
@@ -107,9 +108,12 @@ type Worker struct {
 	//HostCompanyLogo string
 	//HostWebsite     string
 	//HostDescription string
-	HostType    string
-	LatLng      string //TODO: make richer?
-	FirstOnline string
+	HostType     string
+	LatLng       string //TODO: make richer?
+	FirstOnline  string
+	connectedat  time.Time
+	ConnectedFor string
+	Connected    bool
 }
 
 func getasn(ip string) (*string, *string) {
@@ -171,6 +175,8 @@ func NewWorker(conn net.Conn) *Worker {
 	w.Client = rpc.NewClient(conn)
 	w.IP = strings.Split(conn.RemoteAddr().String(), ":")[0]
 	//TODO: Authenticate and fetch capabilities
+	w.connectedat = time.Now()
+	w.Connected = true
 	tlsconn, ok := conn.(*tls.Conn)
 	if !ok {
 		log.Println("Not TLS Conn")
@@ -267,10 +273,32 @@ func (tracker *Tracker) WorkerJson() []byte {
 	defer tracker.workerlock.RUnlock()
 	workers := make([]*Worker, 0)
 	for _, w := range tracker.workers {
+		w.ConnectedFor = time.Since(w.connectedat).String()
 		workers = append(workers, w)
 	}
 	data, _ := json.MarshalIndent(workers, "", "  ")
 	return data
+}
+
+func (tracker *Tracker) SingleWorkerJson(agentid string) ([]byte, error) {
+	id := new(big.Int)
+	id.SetString(agentid, 10)
+	tracker.workerlock.RLock()
+	defer tracker.workerlock.RUnlock()
+	var data []byte
+	var wrk *Worker
+	for _, w := range tracker.workers {
+		w.ConnectedFor = time.Since(w.connectedat).String()
+		if id.Cmp(w.Serial) == 0 {
+			wrk = w
+		}
+	}
+	//log.Println(wrk)
+	if wrk == nil {
+		return data, errors.New("Not found")
+	}
+	data, err := json.MarshalIndent(wrk, "", "  ")
+	return data, err
 }
 
 //Repopulate the worker info from db... without having to disconnect
@@ -280,7 +308,6 @@ func (tracker *Tracker) Repopulate() {
 	for _, w := range tracker.workers {
 		populatedata(w, true)
 	}
-
 }
 
 func (tracker *Tracker) Runner(req *pulse.CombinedRequest) []*pulse.CombinedResult {
@@ -439,15 +466,20 @@ func agentshandler(w http.ResponseWriter, r *http.Request) {
 	splitted := strings.Split(r.URL.Path, "/")
 	if len(splitted) == 4 {
 		agentid := splitted[2]
-		wrk := new(Worker)
-		wrk.Serial = new(big.Int)
-		wrk.Serial.SetString(agentid, 10)
-		populatedata(wrk, false)
-		if wrk.Name == "" {
-			w.WriteHeader(404)
-			return
+		b, err := tracker.SingleWorkerJson(agentid)
+		if err != nil {
+			log.Println(err)
+			wrk := new(Worker)
+			wrk.Serial = new(big.Int)
+			wrk.Serial.SetString(agentid, 10)
+			populatedata(wrk, false)
+			if wrk.Name == "" {
+				w.WriteHeader(404)
+				return
+			} else {
+				b, err = json.MarshalIndent(wrk, "", "  ")
+			}
 		}
-		b, err := json.MarshalIndent(wrk, "", "  ")
 		if err != nil {
 			w.WriteHeader(404)
 			return
