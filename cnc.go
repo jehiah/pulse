@@ -37,6 +37,8 @@ type AgentInfo struct {
 	Country        string
 	SerialNumber   *big.Int
 	LocalResolvers []string
+	ASN            string
+	ASName         string
 	//HostName        string
 	//HostEmail       string
 	//HostWebsite     string
@@ -55,8 +57,8 @@ func (agent *AgentInfo) GetBSON() (interface{}, error) {
 		{"Country", agent.Country},
 		{"LocalResolvers", strings.Join(agent.LocalResolvers, ",")},
 		{"_id", agent.SerialNumber.String()},
-		//{"HostName", agent.HostName},
-		//{"HostEmail", agent.HostEmail},
+		{"ASN", agent.ASN},
+		{"ASName", agent.ASName},
 		//{"HostWebsite", agent.HostWebsite},
 		//{"HostDescription", agent.HostDescription},
 		{"HostType", agent.HostType},
@@ -79,8 +81,8 @@ func (agent *AgentInfo) SetBSON(raw bson.Raw) error {
 	agent.LocalResolvers = strings.Split(data["LocalResolvers"], ",")
 	agent.SerialNumber = new(big.Int)
 	agent.SerialNumber.SetString(data["_id"], 10)
-	//agent.HostName = data["HostName"]
-	//agent.HostEmail = data["HostEmail"]
+	agent.ASN = data["ASN"]
+	agent.ASName = data["ASName"]
 	//agent.HostWebsite = data["HostWebsite"]
 	//agent.HostDescription = data["HostDescription"]
 	//agent.HostCompanyLogo = data["HostCompanyLogo"]
@@ -147,6 +149,14 @@ func populatedata(w *Worker, insertfirst bool) {
 	//w.HostCompanyLogo = agent.HostCompanyLogo
 	//w.HostWebsite = agent.HostWebsite
 	w.HostType = agent.HostType
+	if !insertfirst {
+		//Populate is running cause of offline agent
+		w.ASN = &agent.ASN
+		w.ASName = &agent.ASName
+	} else {
+		//Update DB with last known ASN data
+		c.UpdateId(agent.SerialNumber.String(), bson.M{"$set": bson.M{"ASN": w.ASN, "ASName": w.ASName}})
+	}
 	if agent.FirstOnline == "" && insertfirst {
 		//The first time it actually came online...
 		log.Println("This is first time agent came online ", agent.SerialNumber)
