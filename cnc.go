@@ -31,20 +31,20 @@ var session *mgo.Session
 
 //AgentInfo is what we store in db...
 type AgentInfo struct {
-	Name            string
-	City            string
-	State           string
-	Country         string
-	SerialNumber    *big.Int
-	LocalResolvers  []string
-	HostName        string
-	HostEmail       string
-	HostWebsite     string
-	HostDescription string
-	HostCompanyLogo string
-	HostType        string // H = Home, O = Office, D = Datacenter
-	FirstOnline     string
-	LatLng          string //TODO: make richer?
+	Name           string
+	City           string
+	State          string
+	Country        string
+	SerialNumber   *big.Int
+	LocalResolvers []string
+	//HostName        string
+	//HostEmail       string
+	//HostWebsite     string
+	//HostDescription string
+	//HostCompanyLogo string
+	HostType    string // H = Home, O = Office, D = Datacenter
+	FirstOnline string
+	LatLng      string //TODO: make richer?
 }
 
 func (agent *AgentInfo) GetBSON() (interface{}, error) {
@@ -55,12 +55,12 @@ func (agent *AgentInfo) GetBSON() (interface{}, error) {
 		{"Country", agent.Country},
 		{"LocalResolvers", strings.Join(agent.LocalResolvers, ",")},
 		{"_id", agent.SerialNumber.String()},
-		{"HostName", agent.HostName},
-		{"HostEmail", agent.HostEmail},
-		{"HostWebsite", agent.HostWebsite},
-		{"HostDescription", agent.HostDescription},
+		//{"HostName", agent.HostName},
+		//{"HostEmail", agent.HostEmail},
+		//{"HostWebsite", agent.HostWebsite},
+		//{"HostDescription", agent.HostDescription},
 		{"HostType", agent.HostType},
-		{"HostCompanyLogo", agent.HostCompanyLogo},
+		//{"HostCompanyLogo", agent.HostCompanyLogo},
 		{"FirstOnline", agent.FirstOnline},
 		{"LatLng", agent.LatLng},
 	}, nil
@@ -79,11 +79,11 @@ func (agent *AgentInfo) SetBSON(raw bson.Raw) error {
 	agent.LocalResolvers = strings.Split(data["LocalResolvers"], ",")
 	agent.SerialNumber = new(big.Int)
 	agent.SerialNumber.SetString(data["_id"], 10)
-	agent.HostName = data["HostName"]
-	agent.HostEmail = data["HostEmail"]
-	agent.HostWebsite = data["HostWebsite"]
-	agent.HostDescription = data["HostDescription"]
-	agent.HostCompanyLogo = data["HostCompanyLogo"]
+	//agent.HostName = data["HostName"]
+	//agent.HostEmail = data["HostEmail"]
+	//agent.HostWebsite = data["HostWebsite"]
+	//agent.HostDescription = data["HostDescription"]
+	//agent.HostCompanyLogo = data["HostCompanyLogo"]
 	agent.HostType = data["HostType"]
 	agent.FirstOnline = data["FirstOnline"]
 	agent.LatLng = data["LatLng"]
@@ -91,22 +91,23 @@ func (agent *AgentInfo) SetBSON(raw bson.Raw) error {
 }
 
 type Worker struct {
-	Client          *rpc.Client `json:"date"`
-	IP              string      `json:"date"`
-	Geo             string      //TODO: Make richer
-	Resolvers       []string    //List of resolvers this worker supports
-	Name            string
-	ASN             *string
-	ASName          *string
-	State           string
-	Country         string
-	City            string
-	Serial          *big.Int
-	HostCompanyLogo string
-	HostWebsite     string
-	HostDescription string
-	HostType        string
-	//LatLng          string //TODO: make richer?
+	Client    *rpc.Client `json:"date"`
+	IP        string      `json:"date"`
+	Geo       string      //TODO: Make richer
+	Resolvers []string    //List of resolvers this worker supports
+	Name      string
+	ASN       *string
+	ASName    *string
+	State     string
+	Country   string
+	City      string
+	Serial    *big.Int
+	//HostCompanyLogo string
+	//HostWebsite     string
+	//HostDescription string
+	HostType    string
+	LatLng      string //TODO: make richer?
+	FirstOnline string
 }
 
 func getasn(ip string) (*string, *string) {
@@ -141,9 +142,10 @@ func populatedata(w *Worker, insertfirst bool) {
 	w.State = agent.State
 	w.Country = agent.Country
 	w.Resolvers = agent.LocalResolvers
-	w.HostDescription = agent.HostDescription
-	w.HostCompanyLogo = agent.HostCompanyLogo
-	w.HostWebsite = agent.HostWebsite
+	w.LatLng = agent.LatLng
+	//w.HostDescription = agent.HostDescription
+	//w.HostCompanyLogo = agent.HostCompanyLogo
+	//w.HostWebsite = agent.HostWebsite
 	w.HostType = agent.HostType
 	if agent.FirstOnline == "" && insertfirst {
 		//The first time it actually came online...
@@ -151,6 +153,7 @@ func populatedata(w *Worker, insertfirst bool) {
 		agent.FirstOnline = time.Now().UTC().String()
 		c.UpdateId(agent.SerialNumber.String(), bson.M{"$set": bson.M{"FirstOnline": agent.FirstOnline}})
 	}
+	w.FirstOnline = agent.FirstOnline
 }
 
 func NewWorker(conn net.Conn) *Worker {
