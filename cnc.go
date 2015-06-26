@@ -272,9 +272,25 @@ func (tracker *Tracker) WorkerJson() []byte {
 	tracker.workerlock.RLock()
 	defer tracker.workerlock.RUnlock()
 	workers := make([]*Worker, 0)
+	foundids := make([]string, 0)
 	for _, w := range tracker.workers {
 		w.ConnectedFor = time.Since(w.connectedat).String()
 		workers = append(workers, w)
+		foundids = append(foundids, w.Serial.String())
+	}
+	//Append offline workers...
+	c := session.DB("dnsdist").C("agents")
+	var newids []string
+	err := c.Find(bson.M{"_id": bson.M{"$nin": foundids}}).Distinct("_id", &newids)
+	log.Println(err)
+	log.Println(foundids)
+	log.Println(newids)
+	for _, newid := range newids {
+		wrk := new(Worker)
+		wrk.Serial = new(big.Int)
+		wrk.Serial.SetString(newid, 10)
+		populatedata(wrk, false)
+		workers = append(workers, wrk)
 	}
 	data, _ := json.MarshalIndent(workers, "", "  ")
 	return data
