@@ -282,9 +282,9 @@ func (tracker *Tracker) WorkerJson() []byte {
 	c := session.DB("dnsdist").C("agents")
 	var newids []string
 	err := c.Find(bson.M{"_id": bson.M{"$nin": foundids}}).Distinct("_id", &newids)
-	log.Println(err)
-	log.Println(foundids)
-	log.Println(newids)
+	//log.Println(err)
+	//log.Println(foundids)
+	//log.Println(newids)
 	for _, newid := range newids {
 		wrk := new(Worker)
 		wrk.Serial = new(big.Int)
