@@ -74,7 +74,10 @@ func CurlImpl(r *CurlRequest) *CurlResult {
 		Dial:              myDialer.Dial,
 		ResponseHeaderTimeout: 30 * time.Second,
 		TLSHandshakeTimeout:   15 * time.Second,
-		TLSClientConfig:       &tls.Config{ServerName: tlshost}, //Override the hostname to validate
+		TLSClientConfig: &tls.Config{
+			MinVersion: tls.VersionTLS10, //TLS 1.0 minimum. Depricating SSLv3 RFC 7568
+			ServerName: tlshost,
+		}, //Override the hostname to validate
 	}
 	resp, err := MyTransport.RoundTrip(req)
 	if err != nil {
