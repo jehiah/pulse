@@ -11,6 +11,7 @@ import (
 	"flag"
 	"github.com/abh/geoip"
 	"github.com/miekg/dns"
+	"github.com/sajal/mtrparser"
 	"github.com/turbobytes/pulse/utils"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -507,10 +508,29 @@ func agentshandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func getasnmtr(ip string, gia *geoip.GeoIP) string {
+	asntmp, _ := gia.GetName(ip)
+	if asntmp != "" {
+		splitted := strings.SplitN(asntmp, " ", 2)
+		if len(splitted) == 2 {
+			return splitted[0]
+		}
+	}
+	return ""
+}
+
 func repopulatehandler(w http.ResponseWriter, r *http.Request) {
 	//w.Header().Set("Content-Type", "application/json")
 	tracker.Repopulate()
 	w.Write([]byte("DONE"))
+}
+
+func ResolveASNMtr(hop *mtrparser.MtrHop, gia *geoip.GeoIP) {
+	hop.ASN = make([]string, len(hop.IP))
+	for idx, ip := range hop.IP {
+		//TODO...
+		hop.ASN[idx] = getasnmtr(ip, gia)
+	}
 }
 
 func runmtr(w http.ResponseWriter, r *http.Request) {
@@ -533,6 +553,23 @@ func runmtr(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Println(req)
 	results := tracker.Runner(creq)
+	log.Println("Got results")
+	var wg sync.WaitGroup
+	for _, res := range results {
+		result, _ := res.Result.(pulse.MtrResult)
+		if result.Err == "" {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				for _, hop := range result.Result.Hops {
+					ResolveASNMtr(hop, gia)
+				}
+				result.Result.Summarize(10)
+			}()
+		}
+	}
+	wg.Wait()
+	log.Println("Populated hostnames")
 	b, err := json.MarshalIndent(results, "", "  ")
 	if err != nil {
 		log.Println(err)
