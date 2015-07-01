@@ -24,21 +24,21 @@ type CombinedRequest struct {
 }
 
 type CombinedResult struct {
-	Type         int
-	Result       interface{}
-	CompletedAt  time.Time
-	TimeTaken    time.Duration
-	TimeTakenStr string
-	Err          string
-	Version      string
-	Name         string
-	Agent        string
-	ASN          *string
-	ASName       *string
-	Country      string
-	State        string
-	City         string
-	Id           *big.Int
+	Type         int           //Test type. 1=dns, 2=mtr, 3=curl
+	Result       interface{}   //DNSResult for dns, CurlResult for curl and MtrResult for mtr
+	CompletedAt  time.Time     //Time the test was completed
+	TimeTaken    time.Duration //Time taken to run the test
+	TimeTakenStr string        //Time taken to run the test in humanized form
+	Err          string        //Any error, typically at RPC level
+	Version      string        //The version of the minion that ran this test
+	Name         string        //The name assigned to this agent.
+	Agent        string        // /24 IP of the agent.
+	ASN          *string       //ASN of the agent.
+	ASName       *string       //ASN description of the agent.
+	Country      string        //Agent's country
+	State        string        //Agent's state
+	City         string        //Agent's city
+	Id           *big.Int      //Agent's ID - this is unique per agent
 }
 
 func (r *Resolver) Combined(req *CombinedRequest, out *CombinedResult) error {

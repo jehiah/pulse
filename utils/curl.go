@@ -10,12 +10,12 @@ import (
 )
 
 type CurlResult struct {
-	Status    int
-	Header    http.Header
-	Remote    string
-	Err       string
-	Proto     string
-	StatusStr string
+	Status    int         //HTTP status of result
+	Header    http.Header //Headers
+	Remote    string      //Remote IP the connection was made to
+	Err       string      //Any Errors that happened. Usually for DNS fail or connection errors.
+	Proto     string      //Response protocol
+	StatusStr string      //Status in stringified form
 }
 
 type CurlRequest struct {
