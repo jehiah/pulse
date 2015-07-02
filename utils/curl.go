@@ -49,7 +49,6 @@ func (md *MyDialer) Dial(network, address string) (net.Conn, error) {
 	return con, err
 }
 
-//example: Curl("/Forsaken.rar", "wpc.6e8d.chicdn.net", "levelup-test.turbobytes.net", false)
 func CurlImpl(r *CurlRequest) *CurlResult {
 	var url string
 	if r.Ssl {
