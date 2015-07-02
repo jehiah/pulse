@@ -177,7 +177,32 @@ func main() {
 		log.Println("Certificate file not found ", certificateFile)
 		log.Println("generating..")
 		//Hmm ... create a full blown CSR... or just send pub key...
-		pulse.PrintCertRequest(privateKeyFile)
+		hash := pulse.PrintCertRequest(privateKeyFile)
+		//Lets see with S3 if Cert is available there...
+		log.Println("Checking if certificate has been uploaded yet...")
+		url := "https://s3.amazonaws.com/tb-minion/certs/" + hash + ".crt"
+		resp, err := http.Get(url)
+		if err == nil {
+			if resp.StatusCode == 200 {
+				body, err := ioutil.ReadAll(resp.Body)
+				if err != nil {
+					log.Fatal(err)
+				}
+				f, err := os.Create(certificateFile)
+				if err != nil {
+					//Permission issue?
+					log.Fatal(err)
+				}
+				f.Write(body)
+				f.Close()
+			} else {
+				//404 or 403 cause cert not yet uploaded
+				log.Fatal(resp.StatusCode)
+			}
+		} else {
+			//Error contacting S3, FAIL here because we know cert is missing
+			log.Fatal(err)
+		}
 	}
 
 	for {

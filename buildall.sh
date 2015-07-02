@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VERSION="1.0.42"
+VERSION="1.0.43"
 LDFLAGS="-X main.version $VERSION"
 KEY=$1 #The key to sign the package with
 
@@ -17,11 +17,18 @@ do
 	do
 		if [ "$ARCH" = "amd64" ] || [ "$OS" = "linux" ]; then #process arm only for linux
 			echo "$OS-$ARCH"
-			GOOS="$OS" GOARCH="$ARCH" go build -ldflags "$LDFLAGS" -o minion minion.go
-			tar -czf "minion.$OS.$ARCH.tar.gz" minion
+			if [ "$OS" = "windows" ]; then
+				#Windows binary is exe
+				GOOS="$OS" GOARCH="$ARCH" go build -ldflags "$LDFLAGS" -o minion.exe minion.go
+				tar -czf "minion.$OS.$ARCH.tar.gz" minion.exe
+			else
+				GOOS="$OS" GOARCH="$ARCH" go build -ldflags "$LDFLAGS" -o minion minion.go
+				tar -czf "minion.$OS.$ARCH.tar.gz" minion
+			fi
 			sha256sum "minion.$OS.$ARCH.tar.gz" >  "minion.$OS.$ARCH.tar.gz.sha256sum"
 			gpg --default-key $KEY --output "minion.$OS.$ARCH.tar.gz.sig" --detach-sig "minion.$OS.$ARCH.tar.gz"
 			rm minion
+			rm minion.exe
 		fi
 	done
 done

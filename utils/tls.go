@@ -5,6 +5,7 @@ package pulse
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha1"
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
@@ -86,7 +87,8 @@ func GeneratePrivKeyFile(fname string) {
 	f.Close()
 }
 
-func PrintCertRequest(privfname string) {
+func PrintCertRequest(privfname string) string {
+	log.Println(privfname)
 	privraw, err := ioutil.ReadFile(privfname)
 	if err != nil {
 		log.Fatal(err)
@@ -130,4 +132,8 @@ func PrintCertRequest(privfname string) {
 		log.Fatal(err)
 	}
 	f.Close()
+	//log.Println(pk.N)
+	data := fmt.Sprintf("Modulus=%X\n", pk.N.Bytes())
+	//log.Println(data)
+	return fmt.Sprintf("%x", sha1.Sum([]byte(data)))
 }
