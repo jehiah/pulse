@@ -25,17 +25,18 @@ type DNSResult struct {
 }
 
 type DNSRequest struct {
-	Host    string
-	QType   uint16
-	Targets []string
+	Host        string   //The DNS query
+	QType       uint16   //Query type : https://en.wikipedia.org/wiki/List_of_DNS_record_types#Resource_records
+	Targets     []string //The target nameservers
+	NoRecursion bool     //true means RecursionDesired = false. false means RecursionDesired = true
 }
 
-func rundnsquery(host, server string, ch chan IndividualDNSResult, qclass uint16, retry bool) {
+func rundnsquery(host, server string, ch chan IndividualDNSResult, qclass uint16, norecurse, retry bool) {
 	res := IndividualDNSResult{}
 	res.Server = strings.Split(server, ":")[0]
 	m1 := new(dns.Msg)
 	m1.Id = dns.Id()
-	m1.RecursionDesired = true
+	m1.RecursionDesired = !norecurse
 	m1.Question = make([]dns.Question, 1)
 	m1.Question[0] = dns.Question{host, qclass, dns.ClassINET}
 	c := new(dns.Client)
@@ -51,7 +52,7 @@ func rundnsquery(host, server string, ch chan IndividualDNSResult, qclass uint16
 		if retry {
 			//If fail at first... try again .. once...
 			//I could tell a UDP joke... but you might not get it...
-			rundnsquery(host, server, ch, qclass, false)
+			rundnsquery(host, server, ch, qclass, norecurse, false)
 		} else {
 			ch <- res
 		}
@@ -70,7 +71,7 @@ func DNSImpl(r *DNSRequest) *DNSResult {
 	res.Results = make([]IndividualDNSResult, n)
 	ch := make(chan IndividualDNSResult, n)
 	for _, server := range r.Targets {
-		go rundnsquery(r.Host, server, ch, r.QType, true)
+		go rundnsquery(r.Host, server, ch, r.QType, r.NoRecursion, true)
 		time.Sleep(time.Millisecond * 5) //Pace out the packets a bit
 	}
 	for i := 0; i < n; i++ {

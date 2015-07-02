@@ -17,6 +17,7 @@
         <option value="255">ANY</option>
     </select>
     Target: <input ng-model="dnstarget" placeholder="Leave blank for defaults">
+    <input type="checkbox" ng-model="norecurse">No recurse
     <button ng-click="runtest()">Run</button> <br />
     Curl Hostname: <input ng-model="hostname">Endpoint: <input ng-model="endpoint">Path: <input ng-model="path"><input type="checkbox" ng-model="ssl">SSL <button ng-click="runcurltest()">Run</button><br />
     <span ng-show='path != "" || hostname != "" || endpoint !=""'>
@@ -124,7 +125,8 @@
             $scope.fail = false
             var data = {
                 "Host": $scope.domain,
-                "QType": parseInt($scope.qtype)
+                "QType": parseInt($scope.qtype),
+                "NoRecursion" : $scope.norecurse
             }
             if (($scope.dnstarget) && ($scope.dnstarget != "")) {
                 data["Targets"] = [$scope.dnstarget]
