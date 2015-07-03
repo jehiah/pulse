@@ -254,6 +254,7 @@ func pingworker(worker *Worker) (err error) {
 	case <-time.After(10 * time.Second):
 		go tracker.UnRegister(worker) //Did not respond to ping in 10 seconds
 		err = errors.New("Ping timeout")
+		log.Println(err)
 	}
 	return err
 }
