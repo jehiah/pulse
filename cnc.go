@@ -236,14 +236,24 @@ func (tracker *Tracker) UnRegister(worker *Worker) {
 	//tracker.workers = newworkers
 }
 
-func pingworker(worker *Worker) error {
+func pingworker(worker *Worker) (err error) {
 	var reply bool
-	err := worker.Client.Call("Pinger.Ping", true, &reply)
-	if err == rpc.ErrShutdown {
-		go tracker.UnRegister(worker) //Async cause of locking
-		log.Println("Unregistering from tracker")
-	} else if err != nil {
-		log.Println("pinger", err)
+	c := make(chan error, 1)
+	//We use this channel trikery to implement a timeout. If pinger doesnt respond in 10 seconds we kill the connection.
+	go func() {
+		c <- worker.Client.Call("Pinger.Ping", true, &reply)
+	}()
+	select {
+	case err = <-c:
+		if err == rpc.ErrShutdown {
+			go tracker.UnRegister(worker) //Async cause of locking
+			log.Println("Unregistering from tracker")
+		} else if err != nil {
+			log.Println("pinger", err)
+		}
+	case <-time.After(10 * time.Second):
+		go tracker.UnRegister(worker) //Did not respond to ping in 10 seconds
+		err = errors.New("Ping timeout")
 	}
 	return err
 }
