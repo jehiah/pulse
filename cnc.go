@@ -41,7 +41,7 @@ type AgentInfo struct {
 	LocalResolvers []string
 	ASN            string
 	ASName         string
-	//HostName        string
+	Host           string
 	//HostEmail       string
 	//HostWebsite     string
 	//HostDescription string
@@ -61,6 +61,7 @@ func (agent *AgentInfo) GetBSON() (interface{}, error) {
 		{"_id", agent.SerialNumber.String()},
 		{"ASN", agent.ASN},
 		{"ASName", agent.ASName},
+		{"Host", agent.Host},
 		//{"HostWebsite", agent.HostWebsite},
 		//{"HostDescription", agent.HostDescription},
 		{"HostType", agent.HostType},
@@ -85,6 +86,7 @@ func (agent *AgentInfo) SetBSON(raw bson.Raw) error {
 	agent.SerialNumber.SetString(data["_id"], 10)
 	agent.ASN = data["ASN"]
 	agent.ASName = data["ASName"]
+	agent.Host = data["Host"]
 	//agent.HostWebsite = data["HostWebsite"]
 	//agent.HostDescription = data["HostDescription"]
 	//agent.HostCompanyLogo = data["HostCompanyLogo"]
@@ -110,6 +112,7 @@ type Worker struct {
 	//HostWebsite     string
 	//HostDescription string
 	HostType     string
+	Host         string
 	LatLng       string //TODO: make richer?
 	FirstOnline  string
 	connectedat  time.Time
@@ -154,6 +157,7 @@ func populatedata(w *Worker, insertfirst bool) {
 	//w.HostCompanyLogo = agent.HostCompanyLogo
 	//w.HostWebsite = agent.HostWebsite
 	w.HostType = agent.HostType
+	w.Host = agent.Host
 	if !insertfirst {
 		//Populate is running cause of offline agent
 		w.ASN = &agent.ASN
