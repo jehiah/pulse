@@ -40,9 +40,9 @@ func rundnsquery(host, server string, ch chan IndividualDNSResult, qclass uint16
 	m1.Question = make([]dns.Question, 1)
 	m1.Question[0] = dns.Question{host, qclass, dns.ClassINET}
 	c := new(dns.Client)
-	c.DialTimeout = time.Millisecond * 500
+	c.DialTimeout = time.Second * 2
 	c.ReadTimeout = time.Second * 2
-	c.WriteTimeout = time.Millisecond * 500
+	c.WriteTimeout = time.Second * 2
 	log.Println("Asking", server, "for", host)
 	msg, rtt, err := c.Exchange(m1, server)
 	res.RttStr = rtt.String()
