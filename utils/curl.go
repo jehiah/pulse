@@ -10,12 +10,18 @@ import (
 )
 
 type CurlResult struct {
-	Status    int         //HTTP status of result
-	Header    http.Header //Headers
-	Remote    string      //Remote IP the connection was made to
-	Err       string      //Any Errors that happened. Usually for DNS fail or connection errors.
-	Proto     string      //Response protocol
-	StatusStr string      //Status in stringified form
+	Status      int           //HTTP status of result
+	Header      http.Header   //Headers
+	Remote      string        //Remote IP the connection was made to
+	Err         string        //Any Errors that happened. Usually for DNS fail or connection errors.
+	Proto       string        //Response protocol
+	StatusStr   string        //Status in stringified form
+	DialTime    time.Duration //Time it took for DNS + TCP connect. TODO: Split DNS and Connect
+	TLSTime     time.Duration //Time it took for TLS handshake when running in SSL mode
+	Ttfb        time.Duration //Time it took since sending GET and getting results : total time minus DialTime minus TLSTime
+	DialTimeStr string        //Stringified
+	TLSTimeStr  string        //Stringified
+	TtfbStr     string        //Stringified
 }
 
 type CurlRequest struct {
@@ -25,11 +31,19 @@ type CurlRequest struct {
 	Ssl      bool
 }
 
-type MyDialer struct {
-	RemoteStr string
+type myDialer struct {
+	RemoteStr           string
+	DialTime            time.Duration
+	TLSTime             time.Duration
+	TLSClientConfig     *tls.Config
+	TLSHandshakeTimeout time.Duration
 }
 
-func (md *MyDialer) Dial(network, address string) (net.Conn, error) {
+//TODO: Split out DNS and Connect times. Which means we need to
+//do DNS by hand... not rely on net.Dialer for that.
+//ref: http://golang.org/src/net/dial.go?s=4639:4699#L147
+func (md *myDialer) Dial(network, address string) (net.Conn, error) {
+	timer := time.Now()
 	dialer := &net.Dialer{
 		Timeout:   15 * time.Second,
 		KeepAlive: 30 * time.Second,
@@ -46,7 +60,41 @@ func (md *MyDialer) Dial(network, address string) (net.Conn, error) {
 		}
 
 	}
+	md.DialTime = time.Since(timer)
+	log.Println(md.DialTime)
 	return con, err
+}
+
+//Doing DialTLS by hand, and initiating Handshake() just so to get the
+//TLS time.
+func (md *myDialer) DialTLS(network, address string) (net.Conn, error) {
+	con, err := md.Dial(network, address)
+	tlstimer := time.Now()
+	if err != nil {
+		return con, err
+	}
+	tcon := tls.Client(con, md.TLSClientConfig)
+	errc := make(chan error, 2)
+	var timer *time.Timer
+	timer = time.AfterFunc(md.TLSHandshakeTimeout, func() {
+		errc <- tlsHandshakeTimeoutError
+	})
+	go func() {
+		err := tcon.Handshake()
+		if timer != nil {
+			timer.Stop()
+		}
+		errc <- err
+	}()
+	err = <-errc
+	if err != nil {
+		con.Close()
+		//return nil, err
+	}
+	md.TLSTime = time.Since(tlstimer)
+	//err = tcon.Handshake()
+	log.Println(md.TLSTime)
+	return tcon, err
 }
 
 func CurlImpl(r *CurlRequest) *CurlResult {
@@ -59,31 +107,37 @@ func CurlImpl(r *CurlRequest) *CurlResult {
 	log.Println(url)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return &CurlResult{0, nil, "", err.Error(), "", ""}
+		return &CurlResult{0, nil, "", err.Error(), "", "", time.Duration(0), time.Duration(0), time.Duration(0), "", "", ""}
 	}
 	tlshost := r.Endpoint //Validate with endpoint if no host given
 	if r.Host != "" {
 		req.Host = r.Host
 		tlshost = r.Host //Validate with Host hdr if present
 	}
-	myDialer := &MyDialer{}
-	MyTransport := &http.Transport{
-		Proxy:             http.ProxyFromEnvironment,
-		DisableKeepAlives: true,
-		Dial:              myDialer.Dial,
-		ResponseHeaderTimeout: 30 * time.Second,
-		TLSHandshakeTimeout:   15 * time.Second,
-		TLSClientConfig: &tls.Config{
-			MinVersion: tls.VersionTLS10, //TLS 1.0 minimum. Depricating SSLv3 RFC 7568
-			ServerName: tlshost,
-		}, //Override the hostname to validate
+	tlscfg := &tls.Config{
+		MinVersion: tls.VersionTLS10, //TLS 1.0 minimum. Depricating SSLv3 RFC 7568
+		ServerName: tlshost,          //Override the hostname to validate
 	}
+	md := &myDialer{
+		TLSHandshakeTimeout: 15 * time.Second,
+		TLSClientConfig:     tlscfg,
+	}
+	MyTransport := &http.Transport{
+		Proxy:                 http.ProxyFromEnvironment,
+		DisableKeepAlives:     true,
+		Dial:                  md.Dial,
+		DialTLS:               md.DialTLS,
+		ResponseHeaderTimeout: 30 * time.Second,
+	}
+	start := time.Now()
 	resp, err := MyTransport.RoundTrip(req)
+	ttfb := time.Since(start) - (md.DialTime + md.TLSTime)
+	log.Println(ttfb)
 	if err != nil {
-		return &CurlResult{0, nil, myDialer.RemoteStr, err.Error(), "", ""}
+		return &CurlResult{0, nil, md.RemoteStr, err.Error(), "", "", md.DialTime, md.TLSTime, ttfb, md.DialTime.String(), md.TLSTime.String(), ttfb.String()}
 	}
 	//log.Println(myDialer.RemoteStr)
 	//t, _ := http.DefaultTransport.(*http.Transport)
 	resp.Body.Close()
-	return &CurlResult{resp.StatusCode, resp.Header, myDialer.RemoteStr, "", resp.Proto, resp.Status}
+	return &CurlResult{resp.StatusCode, resp.Header, md.RemoteStr, "", resp.Proto, resp.Status, md.DialTime, md.TLSTime, ttfb, md.DialTime.String(), md.TLSTime.String(), ttfb.String()}
 }
