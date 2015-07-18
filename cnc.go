@@ -572,15 +572,17 @@ func runmtr(w http.ResponseWriter, r *http.Request) {
 	var wg sync.WaitGroup
 	for _, res := range results {
 		result, _ := res.Result.(pulse.MtrResult)
-		if result.Err == "" {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				for _, hop := range result.Result.Hops {
-					ResolveASNMtr(hop, gia)
-				}
-				result.Result.Summarize(10)
-			}()
+		if result.Result != nil {
+			if result.Err == "" {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					for _, hop := range result.Result.Hops {
+						ResolveASNMtr(hop, gia)
+					}
+					result.Result.Summarize(10)
+				}()
+			}
 		}
 	}
 	wg.Wait()

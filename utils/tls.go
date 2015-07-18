@@ -87,7 +87,7 @@ func GeneratePrivKeyFile(fname string) {
 	f.Close()
 }
 
-func PrintCertRequest(privfname string) string {
+func PrintCertRequest(privfname, reqfname string) string {
 	log.Println(privfname)
 	privraw, err := ioutil.ReadFile(privfname)
 	if err != nil {
@@ -113,7 +113,7 @@ func PrintCertRequest(privfname string) string {
 		Bytes: csr,
 	}
 
-	f, err := os.Create("minion.crt.request")
+	f, err := os.Create(reqfname)
 	if err != nil {
 		log.Fatal(err)
 	}
