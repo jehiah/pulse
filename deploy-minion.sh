@@ -136,7 +136,7 @@ do
 	    if [ $? -eq 0 ]
 	    then
 	    	echo "Successfully downloaded"
-	    	tar -xzf "$TARFILE"
+	    	tar -oxzf "$TARFILE"
 	    	cp latest current
 	    fi
 	else
