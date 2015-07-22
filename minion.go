@@ -37,5 +37,5 @@ func main() {
 	flag.Var(&servers, "servers", "DNS servers to query 8.8.8.8:53 and 208.67.222.222:53 included by default")
 	flag.Parse()
 	log.Println("servers", servers)
-	pulse.Runminion(cnc, caFile, certificateFile, privateKeyFile, reqFile, version, servers)
+	log.Fatal(pulse.Runminion(cnc, caFile, certificateFile, privateKeyFile, reqFile, version, servers))
 }

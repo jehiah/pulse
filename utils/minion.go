@@ -5,6 +5,7 @@ package pulse
 import (
 	"crypto/tls"
 	"encoding/gob"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -110,7 +111,7 @@ func versionsuicide() {
 	}
 }
 
-func Runminion(cnc, caFile, certificateFile, privateKeyFile, reqFile, ver string, servers []string) {
+func Runminion(cnc, caFile, certificateFile, privateKeyFile, reqFile, ver string, servers []string) error {
 	gob.RegisterName("github.com/turbobytes/pulse/utils.MtrRequest", MtrRequest{})
 	gob.RegisterName("github.com/turbobytes/pulse/utils.MtrResult", MtrResult{})
 	gob.RegisterName("github.com/turbobytes/pulse/utils.CurlRequest", CurlRequest{})
@@ -141,17 +142,17 @@ func Runminion(cnc, caFile, certificateFile, privateKeyFile, reqFile, ver string
 		log.Println("downloading..")
 		resp, err := http.Get("https://s3.amazonaws.com/tb-minion/ca.crt")
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != 200 {
-			log.Fatal("Status was not 200!")
+			errors.New("Status was not 200!")
 		}
 		f, err := os.Create(caFile)
 		_, err = io.Copy(f, resp.Body)
 		f.Close()
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
 
@@ -176,22 +177,22 @@ func Runminion(cnc, caFile, certificateFile, privateKeyFile, reqFile, ver string
 			if resp.StatusCode == 200 {
 				body, err := ioutil.ReadAll(resp.Body)
 				if err != nil {
-					log.Fatal(err)
+					return err
 				}
 				f, err := os.Create(certificateFile)
 				if err != nil {
 					//Permission issue?
-					log.Fatal(err)
+					return err
 				}
 				f.Write(body)
 				f.Close()
 			} else {
 				//404 or 403 cause cert not yet uploaded
-				log.Fatal(resp.StatusCode)
+				return errors.New(resp.Status)
 			}
 		} else {
 			//Error contacting S3, FAIL here because we know cert is missing
-			log.Fatal(err)
+			return err
 		}
 	}
 
@@ -200,4 +201,5 @@ func Runminion(cnc, caFile, certificateFile, privateKeyFile, reqFile, ver string
 		cfg := GetTLSConfig(caFile, certificateFile, privateKeyFile)
 		listen(cnc, servers, cfg)
 	}
+	return nil
 }
