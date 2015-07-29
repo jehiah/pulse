@@ -5,9 +5,12 @@ package digdroid
 //gomobile bind github.com/turbobytes/pulse/digdroid
 
 import (
+	"bytes"
+	"fmt"
 	"github.com/miekg/dns"
 	"github.com/turbobytes/pulse/utils"
 	"log"
+	"text/tabwriter"
 )
 
 type DNSResult struct {
@@ -48,9 +51,17 @@ func RunDNS(host, target, qtypestr string, norec bool) *DNSResult {
 	} else {
 		msg := &dns.Msg{}
 		msg.Unpack(result.Results[0].Raw)
-		res.Output = msg.String()
 		log.Println(res.Output)
 		res.Rtt = result.Results[0].RttStr
+		//Using tabwriter.Writer to make formated output with spaces instead of tabs.
+		//Because TextView in java does not know how to format tabs into columns.
+		w := new(tabwriter.Writer)
+		var b bytes.Buffer
+		w.Init(&b, 0, 8, 2, ' ', 0)
+		fmt.Fprintln(w, msg.String())
+		w.Flush()
+		res.Output = string(b.Bytes())
+
 	}
 	return res
 }
