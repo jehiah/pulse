@@ -95,7 +95,7 @@ fi
 TARFILE="minion.$OS.$ARCH.tar.gz"
 SHAFILE="minion.$OS.$ARCH.tar.gz.sha256sum"
 GPGFILE="minion.$OS.$ARCH.tar.gz.sig"
-BASEURL="https://s3.amazonaws.com/tb-minion/"
+BASEURL="https://tb-minion.turbobytes.net/"
 
 echo "$TARFILE $SHAFILE"
 #set -o xtrace

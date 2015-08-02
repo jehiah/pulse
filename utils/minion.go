@@ -89,7 +89,7 @@ func versionsuicide() {
 		//if time.Since(start) > time.Hour*24 {
 		//	log.Fatal("Suiciding")
 		//}
-		resp, err := http.Get("https://s3.amazonaws.com/tb-minion/latest")
+		resp, err := http.Get("https://tb-minion.turbobytes.net/latest")
 		if err == nil {
 			body, err := ioutil.ReadAll(resp.Body)
 			if err == nil {
@@ -140,7 +140,7 @@ func Runminion(cnc, caFile, certificateFile, privateKeyFile, reqFile, ver string
 	if _, err := os.Stat(caFile); os.IsNotExist(err) {
 		log.Println("CA cert not found ", privateKeyFile)
 		log.Println("downloading..")
-		resp, err := http.Get("https://s3.amazonaws.com/tb-minion/ca.crt")
+		resp, err := http.Get("https://tb-minion.turbobytes.net/ca.crt")
 		if err != nil {
 			return err
 		}
@@ -171,7 +171,7 @@ func Runminion(cnc, caFile, certificateFile, privateKeyFile, reqFile, ver string
 		hash := PrintCertRequest(privateKeyFile, reqFile)
 		//Lets see with S3 if Cert is available there...
 		log.Println("Checking if certificate has been uploaded yet...")
-		url := "https://s3.amazonaws.com/tb-minion/certs/" + hash + ".crt"
+		url := "https://tb-minion.turbobytes.net/certs/" + hash + ".crt"
 		resp, err := http.Get(url)
 		if err == nil {
 			if resp.StatusCode == 200 {
