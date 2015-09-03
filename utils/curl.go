@@ -15,11 +15,15 @@ import (
 	"time"
 )
 
+const (
+	useragent = "TurboBytes-Pulse/1.1" //Default user agent
+)
+
 var (
-	tlshandshaketimeout = time.Second * 15
-	dialtimeout         = time.Second * 15
-	responsetimeout     = time.Second * 30
-	keepalive           = time.Second * 30
+	tlshandshaketimeout = time.Second * 15 //Timeout for TLS handshake
+	dialtimeout         = time.Second * 15 //Timeout for Dial (DNS + TCP connect)
+	responsetimeout     = time.Second * 30 //Time out for response header
+	keepalive           = time.Second * 30 //Keepalive timeout
 )
 
 type CurlResult struct {
@@ -186,7 +190,7 @@ func CurlImpl(r *CurlRequest) *CurlResult {
 		result.Err = err.Error()
 		return result
 	}
-
+	req.Header.Set("User-Agent", useragent)
 	//Override Host header if needed
 	tlshost := r.Endpoint //Validate with endpoint if no host given
 	if r.Host != "" {
