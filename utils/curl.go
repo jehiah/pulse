@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -83,6 +84,7 @@ func upgradetls(con net.Conn, tlshost string, result *CurlResult) (net.Conn, err
 
 func dial(endpoint, tlshost string, ssl bool, result *CurlResult) (net.Conn, error) {
 	//If endpoint does not contain a port, add it here
+	log.Println("dial", endpoint, tlshost, ssl)
 	if !strings.Contains(endpoint, ":") {
 		if ssl {
 			endpoint = endpoint + ":443"
@@ -112,6 +114,9 @@ func dial(endpoint, tlshost string, ssl bool, result *CurlResult) (net.Conn, err
 			return nil, securityerr
 		}
 
+	} else {
+		log.Println(err)
+		return nil, err
 	}
 	result.DialTime = time.Since(timer)
 	result.DialTimeStr = result.DialTime.String()
