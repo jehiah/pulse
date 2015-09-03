@@ -1,7 +1,7 @@
 #!/bin/sh
 
-VERSION="1.0.48"
-LDFLAGS="-X main.version $VERSION"
+VERSION="1.0.49"
+LDFLAGS="-X main.version=$VERSION"
 KEY=$1 #The key to sign the package with
 
 if [ "$KEY" = "" ]; then
