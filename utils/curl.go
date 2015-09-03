@@ -87,6 +87,7 @@ func dial(endpoint, tlshost string, ssl bool, result *CurlResult) (net.Conn, err
 	dialer := &net.Dialer{
 		Timeout:   dialtimeout,
 		KeepAlive: keepalive,
+		DualStack: true,
 	}
 	//TODO: Go even lower level cause we need DNS time
 	con, err := dialer.Dial("tcp", endpoint)
