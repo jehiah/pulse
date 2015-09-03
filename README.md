@@ -10,6 +10,10 @@ Dependencies : mongodb (I might replace it with something lighter, or make it op
 - minion - This is the agent that runs at places where you want to debug from. It makes a TLS connection to CNC and waits for incoming test requests to be executed.
 Dependencies: mtr command (ubuntu: apt-get install mtr-tiny)
 
+## Important
+
+This code will only work against Go 1.5 . Before building you must copy misc/patch_dialtimer.go into the net package's directory (in my case it lives in /usr/local/go/src/net/ ). We must do this hack in order to get DNS and Connect timings for http test.
+
 ## Build instructions
 
 	go get github.com/turbobytes/pulse

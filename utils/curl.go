@@ -26,18 +26,22 @@ var (
 )
 
 type CurlResult struct {
-	Status      int           //HTTP status of result
-	Header      http.Header   //Headers
-	Remote      string        //Remote IP the connection was made to
-	Err         string        //Any Errors that happened. Usually for DNS fail or connection errors.
-	Proto       string        //Response protocol
-	StatusStr   string        //Status in stringified form
-	DialTime    time.Duration //Time it took for DNS + TCP connect. TODO: Split DNS and Connect
-	TLSTime     time.Duration //Time it took for TLS handshake when running in SSL mode
-	Ttfb        time.Duration //Time it took since sending GET and getting results : total time minus DialTime minus TLSTime
-	DialTimeStr string        //Stringified
-	TLSTimeStr  string        //Stringified
-	TtfbStr     string        //Stringified
+	Status         int           //HTTP status of result
+	Header         http.Header   //Headers
+	Remote         string        //Remote IP the connection was made to
+	Err            string        //Any Errors that happened. Usually for DNS fail or connection errors.
+	Proto          string        //Response protocol
+	StatusStr      string        //Status in stringified form
+	DialTime       time.Duration //Time it took for DNS + TCP connect.
+	DNSTime        time.Duration //Time it took for DNS.
+	ConnectTime    time.Duration //Time it took for  TCP connect.
+	TLSTime        time.Duration //Time it took for TLS handshake when running in SSL mode
+	Ttfb           time.Duration //Time it took since sending GET and getting results : total time minus DialTime minus TLSTime
+	DialTimeStr    string        //Stringified
+	DNSTimeStr     string        //Stringified
+	ConnectTimeStr string        //Stringified
+	TLSTimeStr     string        //Stringified
+	TtfbStr        string        //Stringified
 }
 
 type CurlRequest struct {
@@ -92,8 +96,12 @@ func dial(endpoint, tlshost string, ssl bool, result *CurlResult) (net.Conn, err
 		KeepAlive: keepalive,
 		DualStack: true,
 	}
-	//TODO: Go even lower level cause we need DNS time
-	con, err := dialer.Dial("tcp", endpoint)
+	//Get dnstime and connect time from out patched Dial
+	con, dnstime, connecttime, err := dialer.DialTimer("tcp", endpoint)
+	result.DNSTime = dnstime
+	result.ConnectTime = connecttime
+	result.DNSTimeStr = dnstime.String()
+	result.ConnectTimeStr = connecttime.String()
 	if err == nil {
 		result.Remote = con.RemoteAddr().String()
 		a, _ := con.RemoteAddr().(*net.TCPAddr)
@@ -170,7 +178,7 @@ func parseresponse(rawconn net.Conn, result *CurlResult) error {
 }
 
 func CurlImpl(r *CurlRequest) *CurlResult {
-	result := &CurlResult{0, nil, "", "", "", "", time.Duration(0), time.Duration(0), time.Duration(0), "", "", ""}
+	result := &CurlResult{}
 	var url string
 	if r.Ssl {
 		url = fmt.Sprintf("https://%s%s", r.Endpoint, r.Path)
