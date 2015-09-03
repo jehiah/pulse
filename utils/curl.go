@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -154,24 +153,19 @@ func parseresponse(rawconn net.Conn, result *CurlResult) error {
 
 	//Extract Proto, Status and StatusStr
 	splitted := strings.SplitN(resp1.statusline, " ", 2)
-	log.Println("splitted:", splitted)
 	if len(splitted) < 2 {
 		return errors.New("Error reading response")
 	}
 	result.Proto = splitted[0]
-	log.Println("Proto:", result.Proto)
 	result.StatusStr = strings.Trim(splitted[1], "\r\n")
-	log.Println("StatusStr:", result.StatusStr)
 	splitted = strings.Split(result.StatusStr, " ")
 	i, err := strconv.Atoi(splitted[0])
 	if err != nil {
 		return errors.New("Error reading response")
 	}
 	result.Status = i
-	log.Println("Status:", result.Status)
 
 	result.Header = resp1.header
-	log.Println("Header:", result.Header)
 	return nil
 }
 
@@ -183,7 +177,6 @@ func CurlImpl(r *CurlRequest) *CurlResult {
 	} else {
 		url = fmt.Sprintf("http://%s%s", r.Endpoint, r.Path)
 	}
-	log.Println(url)
 	//Create a request object
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
