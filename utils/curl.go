@@ -104,6 +104,8 @@ func dial(endpoint, tlshost string, ssl bool, result *CurlResult) (net.Conn, err
 	result.ConnectTime = connecttime
 	result.DNSTimeStr = dnstime.String()
 	result.ConnectTimeStr = connecttime.String()
+	result.DialTime = time.Since(timer)
+	result.DialTimeStr = result.DialTime.String()
 	if err == nil {
 		result.Remote = con.RemoteAddr().String()
 		a, _ := con.RemoteAddr().(*net.TCPAddr)
@@ -118,8 +120,6 @@ func dial(endpoint, tlshost string, ssl bool, result *CurlResult) (net.Conn, err
 		log.Println(err)
 		return nil, err
 	}
-	result.DialTime = time.Since(timer)
-	result.DialTimeStr = result.DialTime.String()
 
 	if ssl {
 		return upgradetls(con, tlshost, result)
