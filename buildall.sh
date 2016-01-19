@@ -13,9 +13,9 @@ set -o xtrace
 
 for ARCH in amd64 arm 386
 do
-	for OS in linux darwin windows
+	for OS in linux darwin windows freebsd
 	do
-		if [ "$ARCH" = "amd64" ] || [ "$OS" = "linux" ]; then #process arm only for linux
+		if [ "$ARCH" = "amd64" ] || [ "$OS" = "linux" ] || [ "$OS" = "freebsd" ]; then #process arm only for linux and freebsd
 			echo "$OS-$ARCH"
 			if [ "$OS" = "windows" ]; then
 				#Windows binary is exe
