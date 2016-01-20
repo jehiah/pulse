@@ -4,6 +4,7 @@ package main
 
 import (
 	"compress/gzip"
+	"crypto/rsa"
 	"crypto/tls"
 	"encoding/gob"
 	"encoding/json"
@@ -657,6 +658,7 @@ func main() {
 	gob.RegisterName("github.com/turbobytes/pulse/utils.CurlResult", pulse.CurlResult{})
 	gob.RegisterName("github.com/turbobytes/pulse/utils.DNSRequest", pulse.DNSRequest{})
 	gob.RegisterName("github.com/turbobytes/pulse/utils.DNSResult", pulse.DNSResult{})
+	gob.Register(rsa.PublicKey{})
 	tracker = NewTracker()
 	var err error
 	session, err = mgo.Dial("localhost")

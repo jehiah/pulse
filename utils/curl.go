@@ -27,22 +27,23 @@ var (
 )
 
 type CurlResult struct {
-	Status         int           //HTTP status of result
-	Header         http.Header   //Headers
-	Remote         string        //Remote IP the connection was made to
-	Err            string        //Any Errors that happened. Usually for DNS fail or connection errors.
-	Proto          string        //Response protocol
-	StatusStr      string        //Status in stringified form
-	DialTime       time.Duration //Time it took for DNS + TCP connect.
-	DNSTime        time.Duration //Time it took for DNS.
-	ConnectTime    time.Duration //Time it took for  TCP connect.
-	TLSTime        time.Duration //Time it took for TLS handshake when running in SSL mode
-	Ttfb           time.Duration //Time it took since sending GET and getting results : total time minus DialTime minus TLSTime
-	DialTimeStr    string        //Stringified
-	DNSTimeStr     string        //Stringified
-	ConnectTimeStr string        //Stringified
-	TLSTimeStr     string        //Stringified
-	TtfbStr        string        //Stringified
+	Status          int                 //HTTP status of result
+	Header          http.Header         //Headers
+	Remote          string              //Remote IP the connection was made to
+	Err             string              //Any Errors that happened. Usually for DNS fail or connection errors.
+	Proto           string              //Response protocol
+	StatusStr       string              //Status in stringified form
+	DialTime        time.Duration       //Time it took for DNS + TCP connect.
+	DNSTime         time.Duration       //Time it took for DNS.
+	ConnectTime     time.Duration       //Time it took for  TCP connect.
+	TLSTime         time.Duration       //Time it took for TLS handshake when running in SSL mode
+	Ttfb            time.Duration       //Time it took since sending GET and getting results : total time minus DialTime minus TLSTime
+	DialTimeStr     string              //Stringified
+	DNSTimeStr      string              //Stringified
+	ConnectTimeStr  string              //Stringified
+	TLSTimeStr      string              //Stringified
+	TtfbStr         string              //Stringified
+	ConnectionState tls.ConnectionState //Additional TLS data when running test over https. Can't use tls.ConnectionState directly cause big.Int doesn't play well with Interface
 }
 
 type CurlRequest struct {
@@ -79,6 +80,7 @@ func upgradetls(con net.Conn, tlshost string, result *CurlResult) (net.Conn, err
 	}
 	result.TLSTime = time.Since(tlstimer)
 	result.TLSTimeStr = result.TLSTime.String()
+	result.ConnectionState = tcon.ConnectionState()
 	return tcon, err
 }
 
