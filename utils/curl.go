@@ -27,23 +27,23 @@ var (
 )
 
 type CurlResult struct {
-	Status          int                 //HTTP status of result
-	Header          http.Header         //Headers
-	Remote          string              //Remote IP the connection was made to
-	Err             string              //Any Errors that happened. Usually for DNS fail or connection errors.
-	Proto           string              //Response protocol
-	StatusStr       string              //Status in stringified form
-	DialTime        time.Duration       //Time it took for DNS + TCP connect.
-	DNSTime         time.Duration       //Time it took for DNS.
-	ConnectTime     time.Duration       //Time it took for  TCP connect.
-	TLSTime         time.Duration       //Time it took for TLS handshake when running in SSL mode
-	Ttfb            time.Duration       //Time it took since sending GET and getting results : total time minus DialTime minus TLSTime
-	DialTimeStr     string              //Stringified
-	DNSTimeStr      string              //Stringified
-	ConnectTimeStr  string              //Stringified
-	TLSTimeStr      string              //Stringified
-	TtfbStr         string              //Stringified
-	ConnectionState tls.ConnectionState //Additional TLS data when running test over https. Can't use tls.ConnectionState directly cause big.Int doesn't play well with Interface
+	Status          int                  //HTTP status of result
+	Header          http.Header          //Headers
+	Remote          string               //Remote IP the connection was made to
+	Err             string               //Any Errors that happened. Usually for DNS fail or connection errors.
+	Proto           string               //Response protocol
+	StatusStr       string               //Status in stringified form
+	DialTime        time.Duration        //Time it took for DNS + TCP connect.
+	DNSTime         time.Duration        //Time it took for DNS.
+	ConnectTime     time.Duration        //Time it took for  TCP connect.
+	TLSTime         time.Duration        //Time it took for TLS handshake when running in SSL mode
+	Ttfb            time.Duration        //Time it took since sending GET and getting results : total time minus DialTime minus TLSTime
+	DialTimeStr     string               //Stringified
+	DNSTimeStr      string               //Stringified
+	ConnectTimeStr  string               //Stringified
+	TLSTimeStr      string               //Stringified
+	TtfbStr         string               //Stringified
+	ConnectionState *tls.ConnectionState //Additional TLS data when running test over https. We snip out PublicKey from the certs cause they dont serialize well.
 }
 
 type CurlRequest struct {
@@ -80,7 +80,17 @@ func upgradetls(con net.Conn, tlshost string, result *CurlResult) (net.Conn, err
 	}
 	result.TLSTime = time.Since(tlstimer)
 	result.TLSTimeStr = result.TLSTime.String()
-	result.ConnectionState = tcon.ConnectionState()
+	cstate := tcon.ConnectionState()
+	//Remove PublicKey from certs
+	for _, cert := range cstate.PeerCertificates {
+		cert.PublicKey = "removed" //We need to do this for now cause its PITA to serialize it
+	}
+	for _, chain := range cstate.VerifiedChains {
+		for _, cert := range chain {
+			cert.PublicKey = "removed" //We need to do this for now cause its PITA to serialize it
+		}
+	}
+	result.ConnectionState = &cstate
 	return tcon, err
 }
 

@@ -3,7 +3,6 @@ package pulse
 //This is a worker
 
 import (
-	"crypto/rsa"
 	"crypto/tls"
 	"encoding/gob"
 	"errors"
@@ -119,7 +118,6 @@ func Runminion(cnc, caFile, certificateFile, privateKeyFile, reqFile, ver string
 	gob.RegisterName("github.com/turbobytes/pulse/utils.CurlResult", CurlResult{})
 	gob.RegisterName("github.com/turbobytes/pulse/utils.DNSRequest", DNSRequest{})
 	gob.RegisterName("github.com/turbobytes/pulse/utils.DNSResult", DNSResult{})
-	gob.Register(rsa.PublicKey{})
 	servers = []string{"8.8.8.8:53", "208.67.222.222:53"}
 
 	log.Println("servers", servers)
