@@ -82,15 +82,16 @@ func upgradetls(con net.Conn, tlshost string, result *CurlResult) (net.Conn, err
 	result.TLSTime = time.Since(tlstimer)
 	result.TLSTimeStr = result.TLSTime.String()
 	cstate := tcon.ConnectionState()
-	tmpcert := &x509.Certificate{}
 	//Remove PublicKey from certs
 	for i, cert := range cstate.PeerCertificates {
+		tmpcert := &x509.Certificate{}
 		*tmpcert = *cert
 		tmpcert.PublicKey = "removed" //We need to do this for now cause its PITA to serialize it
 		cstate.PeerCertificates[i] = tmpcert
 	}
 	for i, chain := range cstate.VerifiedChains {
 		for j, cert := range chain {
+			tmpcert := &x509.Certificate{}
 			*tmpcert = *cert
 			tmpcert.PublicKey = "removed" //We need to do this for now cause its PITA to serialize it
 			cstate.VerifiedChains[i][j] = tmpcert
