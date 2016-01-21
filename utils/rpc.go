@@ -21,6 +21,7 @@ type CombinedRequest struct {
 	Type        int
 	Args        interface{}
 	RequestedAt time.Time
+	AgentFilter []*big.Int
 }
 
 type CombinedResult struct {

@@ -342,11 +342,29 @@ func (tracker *Tracker) Repopulate() {
 	}
 }
 
+func slicecontainsbigint(num *big.Int, arr []*big.Int) bool {
+	for _, n := range arr {
+		if num.Cmp(n) == 0 {
+			return true
+		}
+	}
+	return false
+}
+
 func (tracker *Tracker) Runner(req *pulse.CombinedRequest) []*pulse.CombinedResult {
 	tracker.workerlock.RLock()
 	defer tracker.workerlock.RUnlock()
+	log.Println(req.AgentFilter)
+	var tmpworker = make(map[string]*Worker)
+	for ip, worker := range tracker.workers {
+		if len(req.AgentFilter) == 0 {
+			tmpworker[ip] = worker
+		} else if slicecontainsbigint(worker.Serial, req.AgentFilter) {
+			tmpworker[ip] = worker
+		}
+	}
 	results := make([]*pulse.CombinedResult, 0)
-	n := len(tracker.workers)
+	n := len(tmpworker)
 	rchan := make(chan *pulse.CombinedResult, n)
 	var originalargs pulse.DNSRequest
 	if req.Type == pulse.TypeDNS {
@@ -355,7 +373,7 @@ func (tracker *Tracker) Runner(req *pulse.CombinedRequest) []*pulse.CombinedResu
 			originalargs = args
 		}
 	}
-	for ip, worker := range tracker.workers {
+	for ip, worker := range tmpworker {
 		go func(worker *Worker, ip string) {
 			log.Println(ip, worker)
 			var reply *pulse.CombinedResult
@@ -482,6 +500,7 @@ func runcurl(w http.ResponseWriter, r *http.Request) {
 		Type:        pulse.TypeCurl,
 		Args:        req,
 		RequestedAt: time.Now(),
+		AgentFilter: req.AgentFilter,
 	}
 	results := tracker.Runner(creq)
 	b, err := json.MarshalIndent(results, "", "  ")
@@ -565,6 +584,7 @@ func runmtr(w http.ResponseWriter, r *http.Request) {
 		Type:        pulse.TypeMTR,
 		Args:        req,
 		RequestedAt: time.Now(),
+		AgentFilter: req.AgentFilter,
 	}
 	log.Println(req)
 	results := tracker.Runner(creq)
@@ -624,6 +644,7 @@ func runtest(w http.ResponseWriter, r *http.Request) {
 		Type:        pulse.TypeDNS,
 		Args:        req,
 		RequestedAt: time.Now(),
+		AgentFilter: req.AgentFilter,
 	}
 	log.Println(req)
 	results := tracker.Runner(creq)

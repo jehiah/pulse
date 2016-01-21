@@ -3,6 +3,7 @@ package pulse
 import (
 	"github.com/miekg/dns"
 	"log"
+	"math/big"
 	"strings"
 	"time"
 )
@@ -29,6 +30,7 @@ type DNSRequest struct {
 	QType       uint16   //Query type : https://en.wikipedia.org/wiki/List_of_DNS_record_types#Resource_records
 	Targets     []string //The target nameservers
 	NoRecursion bool     //true means RecursionDesired = false. false means RecursionDesired = true
+	AgentFilter []*big.Int
 }
 
 func rundnsquery(host, server string, ch chan IndividualDNSResult, qclass uint16, norecurse, retry bool) {

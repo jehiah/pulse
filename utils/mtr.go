@@ -2,6 +2,7 @@ package pulse
 
 import (
 	"github.com/sajal/mtrparser"
+	"math/big"
 	"strings"
 )
 
@@ -11,8 +12,9 @@ type MtrResult struct {
 }
 
 type MtrRequest struct {
-	Target string
-	IPv    string //blank for auto, 4 for IPv4, 6 for IPv6
+	Target      string
+	IPv         string //blank for auto, 4 for IPv4, 6 for IPv6
+	AgentFilter []*big.Int
 }
 
 func MtrImpl(r *MtrRequest) *MtrResult {

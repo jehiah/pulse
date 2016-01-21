@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math/big"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -48,10 +49,11 @@ type CurlResult struct {
 }
 
 type CurlRequest struct {
-	Path     string
-	Endpoint string
-	Host     string
-	Ssl      bool
+	Path        string
+	Endpoint    string
+	Host        string
+	Ssl         bool
+	AgentFilter []*big.Int
 }
 
 func upgradetls(con net.Conn, tlshost string, result *CurlResult) (net.Conn, error) {
