@@ -81,15 +81,6 @@ func upgradetls(con net.Conn, tlshost string, result *CurlResult) (net.Conn, err
 	result.TLSTime = time.Since(tlstimer)
 	result.TLSTimeStr = result.TLSTime.String()
 	cstate := tcon.ConnectionState()
-	//Remove PublicKey from certs
-	for _, cert := range cstate.PeerCertificates {
-		cert.PublicKey = "removed" //We need to do this for now cause its PITA to serialize it
-	}
-	for _, chain := range cstate.VerifiedChains {
-		for _, cert := range chain {
-			cert.PublicKey = "removed" //We need to do this for now cause its PITA to serialize it
-		}
-	}
 	result.ConnectionState = &cstate
 	return tcon, err
 }
@@ -248,6 +239,18 @@ func CurlImpl(r *CurlRequest) *CurlResult {
 
 	result.Ttfb = time.Since(ttfbtimer)
 	result.TtfbStr = result.Ttfb.String()
+
+	if result.ConnectionState != nil {
+		//Remove PublicKey from certs
+		for _, cert := range result.ConnectionState.PeerCertificates {
+			cert.PublicKey = "removed" //We need to do this for now cause its PITA to serialize it
+		}
+		for _, chain := range result.ConnectionState.VerifiedChains {
+			for _, cert := range chain {
+				cert.PublicKey = "removed" //We need to do this for now cause its PITA to serialize it
+			}
+		}
+	}
 	return result
 
 }
