@@ -3,6 +3,7 @@ package pulse
 import (
 	"bufio"
 	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"log"
@@ -81,6 +82,20 @@ func upgradetls(con net.Conn, tlshost string, result *CurlResult) (net.Conn, err
 	result.TLSTime = time.Since(tlstimer)
 	result.TLSTimeStr = result.TLSTime.String()
 	cstate := tcon.ConnectionState()
+	tmpcert := &x509.Certificate{}
+	//Remove PublicKey from certs
+	for i, cert := range cstate.PeerCertificates {
+		*tmpcert = *cert
+		tmpcert.PublicKey = "removed" //We need to do this for now cause its PITA to serialize it
+		cstate.PeerCertificates[i] = tmpcert
+	}
+	for i, chain := range cstate.VerifiedChains {
+		for j, cert := range chain {
+			*tmpcert = *cert
+			tmpcert.PublicKey = "removed" //We need to do this for now cause its PITA to serialize it
+			cstate.VerifiedChains[i][j] = tmpcert
+		}
+	}
 	result.ConnectionState = &cstate
 	return tcon, err
 }
@@ -239,18 +254,6 @@ func CurlImpl(r *CurlRequest) *CurlResult {
 
 	result.Ttfb = time.Since(ttfbtimer)
 	result.TtfbStr = result.Ttfb.String()
-
-	if result.ConnectionState != nil {
-		//Remove PublicKey from certs
-		for _, cert := range result.ConnectionState.PeerCertificates {
-			cert.PublicKey = "removed" //We need to do this for now cause its PITA to serialize it
-		}
-		for _, chain := range result.ConnectionState.VerifiedChains {
-			for _, cert := range chain {
-				cert.PublicKey = "removed" //We need to do this for now cause its PITA to serialize it
-			}
-		}
-	}
 	return result
 
 }
