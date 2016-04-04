@@ -13,17 +13,24 @@ set -o xtrace
 
 for ARCH in amd64 arm 386
 do
-	for OS in linux darwin windows freebsd
+	for OS in linux darwin windows freebsd android
 	do
-		if [ "$ARCH" = "amd64" ] || [ "$OS" = "linux" ] || [ "$OS" = "freebsd" ]; then #process arm only for linux and freebsd
+		if [ "$ARCH" = "amd64" ] || [ "$OS" = "linux" ] || [ "$OS" = "freebsd" ] || [ "$OS" = "android" ]; then #process arm only for linux and freebsd
 			echo "$OS-$ARCH"
 			if [ "$OS" = "windows" ]; then
 				#Windows binary is exe
 				GOOS="$OS" GOARCH="$ARCH" go build -ldflags "$LDFLAGS" -o minion.exe minion.go
 				tar -czf "minion.$OS.$ARCH.tar.gz" minion.exe
 			else
-				GOOS="$OS" GOARCH="$ARCH" go build -ldflags "$LDFLAGS" -o minion minion.go
-				tar -czf "minion.$OS.$ARCH.tar.gz" minion
+				if [ "$OS" = "android" ]; then
+					if [ "$ARCH" = "arm" ]; then
+						GOMOBILE="/home/sajal/go/pkg/gomobile" GOOS=android GOARCH=arm CC=$GOMOBILE/android-ndk-r10e/arm/bin/arm-linux-androideabi-gcc CXX=$GOMOBILE/android-ndk-r10e/arm/bin/arm-linux-androideabi-g++ CGO_ENABLED=1 GOARM=7 go build -p=8 -pkgdir=$GOMOBILE/pkg_android_arm -tags="" -ldflags="$LDFLAGS -extldflags=-pie" -o minion minion.go
+						tar -czf "minion.$OS.$ARCH.tar.gz" minion
+					fi
+				else
+					GOOS="$OS" GOARCH="$ARCH" go build -ldflags "$LDFLAGS" -o minion minion.go
+					tar -czf "minion.$OS.$ARCH.tar.gz" minion
+				fi
 			fi
 			sha256sum "minion.$OS.$ARCH.tar.gz" >  "minion.$OS.$ARCH.tar.gz.sha256sum"
 			gpg --default-key $KEY --output "minion.$OS.$ARCH.tar.gz.sig" --detach-sig "minion.$OS.$ARCH.tar.gz"

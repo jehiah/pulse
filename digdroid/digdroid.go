@@ -32,6 +32,18 @@ func RunDNS(host, target, qtypestr string, norec bool) *DNSResult {
 		qtype = 2
 	case "CNAME":
 		qtype = 5
+	case "MX":
+		qtype = 15
+	case "PTR":
+		qtype = 12
+	case "SOA":
+		qtype = 6
+	case "SRV":
+		qtype = 33
+	case "TXT":
+		qtype = 16
+	case "ANY":
+		qtype = 255
 	}
 	req := &pulse.DNSRequest{
 		Host:        host,
