@@ -1,24 +1,25 @@
 package pulse
 
 import (
-	"bufio"
+	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"errors"
 	"fmt"
-	"log"
+	//	"log"
 	"math/big"
 	"net"
 	"net/http"
-	"net/http/httputil"
-	"net/textproto"
-	"strconv"
-	"strings"
+	"net/http/httptest"
+	"net/http/httptrace"
 	"time"
 )
 
+//User-Agents :-
+//	TurboBytes-Pulse/1.1 = http implementation doing things by hand over the wire
+//	TurboBytes-Pulse/1.2 = http implementation using net/http.Client and httptrace
+
 const (
-	useragent = "TurboBytes-Pulse/1.1" //Default user agent
+	useragent = "TurboBytes-Pulse/1.2" //Default user agent
 )
 
 var (
@@ -56,80 +57,63 @@ type CurlRequest struct {
 	AgentFilter []*big.Int
 }
 
-func upgradetls(con net.Conn, tlshost string, result *CurlResult) (net.Conn, error) {
-	tlstimer := time.Now()
-	tlsconf := &tls.Config{
-		MinVersion: tls.VersionTLS10, //TLS 1.0 minimum. Depricating SSLv3 RFC 7568
-		ServerName: tlshost,          //Override the hostname to validate
-		//NextProtos: []string{"h2", "http/1.1"}, <-- We will do h2 later
-	}
-
-	tcon := tls.Client(con, tlsconf)
-	errc := make(chan error, 2)
-	var timer *time.Timer
-	timer = time.AfterFunc(tlshandshaketimeout, func() {
-		errc <- tlsHandshakeTimeoutError
-	})
-	go func() {
-		err := tcon.Handshake()
-		if timer != nil {
-			timer.Stop()
-		}
-		errc <- err
-	}()
-	err := <-errc
-	if err != nil {
-		con.Close()
-		//return nil, err
-	}
-	result.TLSTime = time.Since(tlstimer)
-	result.TLSTimeStr = result.TLSTime.String()
-	cstate := tcon.ConnectionState()
-	//Remove PublicKey from certs
-	for i, cert := range cstate.PeerCertificates {
-		tmpcert := &x509.Certificate{}
-		*tmpcert = *cert
-		tmpcert.PublicKey = "removed" //We need to do this for now cause its PITA to serialize it
-		cstate.PeerCertificates[i] = tmpcert
-	}
-	for i, chain := range cstate.VerifiedChains {
-		for j, cert := range chain {
-			tmpcert := &x509.Certificate{}
-			*tmpcert = *cert
-			tmpcert.PublicKey = "removed" //We need to do this for now cause its PITA to serialize it
-			cstate.VerifiedChains[i][j] = tmpcert
-		}
-	}
-	result.ConnectionState = &cstate
-	return tcon, err
+type conInfo struct {
+	DNS     time.Duration
+	Connect time.Duration
+	SSL     time.Duration
+	TTFB    time.Duration
+	Total   time.Duration
+	//Transfer    time.Duration No Transfer time because we don't consume body
+	Addr string
 }
 
-func dial(endpoint, tlshost string, ssl bool, result *CurlResult) (net.Conn, error) {
-	//If endpoint does not contain a port, add it here
-	log.Println("dial", endpoint, tlshost, ssl)
-	if !strings.Contains(endpoint, ":") {
-		if ssl {
-			endpoint = endpoint + ":443"
-		} else {
-			endpoint = endpoint + ":80"
+type conTrack struct {
+	DNSStart             time.Time
+	DNSDone              time.Time
+	ConnectStart         map[string]time.Time
+	ConnectDone          map[string]time.Time
+	Addr                 string
+	WroteRequest         time.Time
+	GotFirstResponseByte time.Time
+}
+
+func (ct *conTrack) getConInfo() *conInfo {
+	ci := &conInfo{
+		Addr: ct.Addr,
+	}
+	if ct.GotFirstResponseByte.After(ct.WroteRequest) {
+		ci.TTFB = ct.GotFirstResponseByte.Sub(ct.WroteRequest)
+	}
+	if ct.DNSDone.After(ct.DNSStart) {
+		ci.DNS = ct.DNSDone.Sub(ct.DNSStart)
+	}
+	if ct.Addr == "" && len(ct.ConnectStart) > 0 { //If no addr(cause FAIL) but map has key(s) use any
+		for ct.Addr, _ = range ct.ConnectStart {
+			//log.Println(ct.Addr)
 		}
 	}
-	timer := time.Now()
-	dialer := &net.Dialer{
-		Timeout:   dialtimeout,
-		KeepAlive: keepalive,
-		DualStack: true,
+	cs := ct.ConnectStart[ct.Addr]
+	cd, ok := ct.ConnectDone[ct.Addr]
+	if !ok {
+		cd = time.Now() //If connect was never Done then use now to indicate how long we waited...
 	}
-	//Get dnstime and connect time from out patched Dial
-	con, dnstime, connecttime, err := dialer.DialTimer("tcp", endpoint)
-	result.DNSTime = dnstime
-	result.ConnectTime = connecttime
-	result.DNSTimeStr = dnstime.String()
-	result.ConnectTimeStr = connecttime.String()
-	result.DialTime = time.Since(timer)
-	result.DialTimeStr = result.DialTime.String()
+	if cd.After(cs) {
+		ci.Connect = cd.Sub(cs)
+	}
+	if ct.WroteRequest.After(cd) {
+		ci.SSL = ct.WroteRequest.Sub(cd)
+	}
+	ci.Total = ci.DNS + ci.Connect + ci.SSL + ci.TTFB
+	return ci
+}
+
+func dialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	con, err := (&net.Dialer{
+		Timeout:   dialtimeout, //DNS + Connect
+		KeepAlive: keepalive,
+	}).DialContext(ctx, network, address)
 	if err == nil {
-		result.Remote = con.RemoteAddr().String()
+		//If a connection could be established, ensure its not local
 		a, _ := con.RemoteAddr().(*net.TCPAddr)
 
 		if islocalip(a.IP) {
@@ -137,71 +121,8 @@ func dial(endpoint, tlshost string, ssl bool, result *CurlResult) (net.Conn, err
 			con.Close()
 			return nil, securityerr
 		}
-
-	} else {
-		log.Println(err)
-		return nil, err
 	}
-
-	if ssl {
-		return upgradetls(con, tlshost, result)
-	}
-
 	return con, err
-}
-
-type response struct {
-	statusline string
-	header     http.Header
-	err        error
-}
-
-func readresp(rawconn net.Conn, resc chan response) {
-	rd := bufio.NewReader(rawconn)
-	//Read first line which contains status
-	statusline, _ := rd.ReadString('\n')
-	tp := textproto.NewReader(rd)
-	mimeHeader, err := tp.ReadMIMEHeader()
-	if err != nil {
-		resc <- response{statusline, nil, err}
-		return
-	}
-	httpheader := http.Header(mimeHeader)
-	resc <- response{statusline, httpheader, err}
-}
-
-func parseresponse(rawconn net.Conn, result *CurlResult) error {
-	respchan := make(chan response, 0)
-	go readresp(rawconn, respchan)
-	var resp1 response
-	select {
-	case resp1 = <-respchan:
-		break
-	case <-time.After(responsetimeout):
-		rawconn.Close()
-		return errors.New("Request timed out")
-	}
-
-	if resp1.err != nil {
-		return resp1.err
-	}
-
-	//Extract Proto, Status and StatusStr
-	splitted := strings.SplitN(resp1.statusline, " ", 2)
-	if len(splitted) < 2 {
-		return errors.New("Error reading response")
-	}
-	result.Proto = splitted[0]
-	result.StatusStr = strings.Trim(splitted[1], "\r\n")
-	splitted = strings.Split(result.StatusStr, " ")
-	i, err := strconv.Atoi(splitted[0])
-	if err != nil {
-		return errors.New("Error reading response")
-	}
-	result.Status = i
-
-	result.Header = resp1.header
-	return nil
 }
 
 func CurlImpl(r *CurlRequest) *CurlResult {
@@ -226,38 +147,122 @@ func CurlImpl(r *CurlRequest) *CurlResult {
 		tlshost = r.Host //Validate with Host hdr if present
 	}
 
-	//Get Raw payload which we will eventually write on the wire
-	payload, err := httputil.DumpRequestOut(req, false)
-	if err != nil {
-		result.Err = err.Error()
-		return result
+	//Configure our transport, new one for each request
+	transport := &http.Transport{
+		Proxy:                 http.ProxyFromEnvironment,
+		DialContext:           dialContext,
+		MaxIdleConns:          100,              //Irrelevant
+		IdleConnTimeout:       90 * time.Second, //Irrelevant
+		TLSHandshakeTimeout:   tlshandshaketimeout,
+		ExpectContinueTimeout: 1 * time.Second,
 	}
-	//Make a raw connection
-	rawconn, err := dial(r.Endpoint, tlshost, r.Ssl, result)
-	if err != nil {
-		result.Err = err.Error()
-		return result
-	}
-	defer rawconn.Close()
-	//Start ttfb timer
-	ttfbtimer := time.Now()
-
-	//Write the GET request
-	_, err = rawconn.Write(payload)
-	if err != nil {
-		result.Err = err.Error()
-		return result
+	//Initialize our client
+	client := http.Client{
+		Transport: transport,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		}, //Since we now use high-level client we must stop redirects.
 	}
 
-	//read and parse the response
-	err = parseresponse(rawconn, result)
+	// A dilema... Configuring our own TLSClientConfig causes http
+	// package to not kick in http2. Doing http2.ConfigureTransport
+	// manually messes up httptrace. As a workaround we ho not configure
+	// TLSClientConfig at first, then, if needed, we do a mock request
+	// to fire off transport.onceSetNextProtoDefaults() and then sneak
+	// in the transport.TLSClientConfig.ServerName that we want to configure.
 
-	if err != nil {
-		result.Err = err.Error()
+	if r.Ssl {
+		if tlshost != r.Endpoint {
+			//Begin hacky workaround...
+			//Make mock req to kick in onceSetNextProtoDefaults()
+			server := httptest.NewServer(http.HandlerFunc(http.NotFound))
+			reqtmp, _ := http.NewRequest("GET", server.URL, nil)
+			client.Do(reqtmp) //Don't care about response..
+			//Now mess with TLSClientConfig
+			transport.TLSClientConfig.ServerName = tlshost
+		}
 	}
 
-	result.Ttfb = time.Since(ttfbtimer)
+	//Initialize connection tracker
+	ct := &conTrack{
+		ConnectStart: make(map[string]time.Time),
+		ConnectDone:  make(map[string]time.Time),
+	}
+	//Initialize httptrace
+	trace := &httptrace.ClientTrace{
+		GotConn: func(connInfo httptrace.GotConnInfo) {
+			ct.Addr = connInfo.Conn.RemoteAddr().String()
+			//log.Println(ct.Addr)
+		},
+		DNSStart: func(ds httptrace.DNSStartInfo) {
+			ct.DNSStart = time.Now()
+		},
+		DNSDone: func(dd httptrace.DNSDoneInfo) {
+			ct.DNSDone = time.Now()
+		},
+		ConnectStart: func(network, addr string) {
+			ct.ConnectStart[addr] = time.Now()
+		},
+		ConnectDone: func(network, addr string, err error) {
+			ct.ConnectDone[addr] = time.Now()
+		},
+		GotFirstResponseByte: func() {
+			ct.GotFirstResponseByte = time.Now()
+		},
+		WroteRequest: func(wr httptrace.WroteRequestInfo) {
+			ct.WroteRequest = time.Now()
+		},
+	}
+	//Wrap trace into req
+	req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
+	//Make the request
+	resp, err := client.Do(req)
+	ti := ct.getConInfo()
+	//log.Println(ct, ti)
+	//populate the result with timing info regardless of failure
+	result.Remote = ti.Addr
+	result.DialTime = ti.DNS + ti.Connect
+	result.DNSTime = ti.DNS
+	result.ConnectTime = ti.Connect
+	result.TLSTime = ti.SSL
+	result.Ttfb = ti.TTFB
+	result.DialTimeStr = result.DialTime.String()
+	result.DNSTimeStr = result.DNSTime.String()
+	result.ConnectTimeStr = result.ConnectTime.String()
+	result.TLSTimeStr = result.TLSTime.String()
 	result.TtfbStr = result.Ttfb.String()
-	return result
 
+	//On error stamp err and return
+	if err != nil {
+		result.Err = err.Error()
+		return result
+	}
+	resp.Body.Close()
+	//Not a fail, extract more info
+	result.Status = resp.StatusCode
+	result.StatusStr = resp.Status
+	result.Header = resp.Header
+	result.Proto = resp.Proto
+	//log.Println(resp)
+	//Finally do the connectionstate things...
+	cstate := resp.TLS
+	if cstate != nil {
+		//Remove PublicKey from certs
+		for i, cert := range cstate.PeerCertificates {
+			tmpcert := &x509.Certificate{}
+			*tmpcert = *cert
+			tmpcert.PublicKey = "removed" //We need to do this for now cause its PITA to serialize it
+			cstate.PeerCertificates[i] = tmpcert
+		}
+		for i, chain := range cstate.VerifiedChains {
+			for j, cert := range chain {
+				tmpcert := &x509.Certificate{}
+				*tmpcert = *cert
+				tmpcert.PublicKey = "removed" //We need to do this for now cause its PITA to serialize it
+				cstate.VerifiedChains[i][j] = tmpcert
+			}
+		}
+		result.ConnectionState = cstate
+	}
+	return result
 }

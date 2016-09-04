@@ -33,7 +33,7 @@ func main() {
 	flag.StringVar(&certificateFile, "crt", "minion.crt", "Path to Server Certificate")
 	flag.StringVar(&privateKeyFile, "key", "minion.key", "Path to Private key")
 	flag.StringVar(&reqFile, "req", "minion.crt.request", "Path to request file")
-	flag.StringVar(&cnc, "cnc", "127.0.0.1:7777", "Location of command and control?")
+	flag.StringVar(&cnc, "cnc", "localhost:7777", "Location of command and control?")
 	flag.Var(&servers, "servers", "DNS servers to query 8.8.8.8:53 and 208.67.222.222:53 included by default")
 	flag.Parse()
 	log.Println("servers", servers)

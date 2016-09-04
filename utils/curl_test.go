@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 )
 
@@ -56,7 +57,7 @@ func TestCurlLocalBlock(t *testing.T) {
 		Ssl:      false,
 	}
 	resp := CurlImpl(req)
-	if resp.Err != securityerr.Error() {
+	if !strings.Contains(resp.Err, securityerr.Error()) {
 		t.Error("Security err should have been raised")
 	}
 }
