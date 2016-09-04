@@ -61,6 +61,7 @@ func upgradetls(con net.Conn, tlshost string, result *CurlResult) (net.Conn, err
 	tlsconf := &tls.Config{
 		MinVersion: tls.VersionTLS10, //TLS 1.0 minimum. Depricating SSLv3 RFC 7568
 		ServerName: tlshost,          //Override the hostname to validate
+		//NextProtos: []string{"h2", "http/1.1"}, <-- We will do h2 later
 	}
 
 	tcon := tls.Client(con, tlsconf)

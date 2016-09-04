@@ -124,7 +124,19 @@ func getasn(ip string) (*string, *string) {
 	asntmp, _ := gia.GetName(ip)
 	if asntmp != "" {
 		splitted := strings.SplitN(asntmp, " ", 2)
-		if len(splitted) == 2 {
+		if len(splitted) == 1 {
+			orgdata, err := pulse.IpInfoOrg(ip)
+			if err == nil {
+				splitted = strings.SplitN(orgdata, " ", 2)
+			}
+		}
+		if len(splitted) == 1 {
+			asn, err := pulse.LookupASN(splitted[0])
+			if err == nil {
+				return &splitted[0], &asn
+			}
+			return &splitted[0], nil
+		} else if len(splitted) == 2 {
 			return &splitted[0], &splitted[1]
 		}
 	}
@@ -680,9 +692,9 @@ func main() {
 	gob.RegisterName("github.com/turbobytes/pulse/utils.DNSResult", pulse.DNSResult{})
 	tracker = NewTracker()
 	var err error
-	session, err = mgo.Dial("localhost")
+	session, err = mgo.Dial("127.0.0.1")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("mongo ", err)
 	}
 	defer session.Close()
 

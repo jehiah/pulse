@@ -12,7 +12,7 @@ Dependencies: mtr command (ubuntu: apt-get install mtr-tiny)
 
 ## Important
 
-This code will only work against Go 1.5 . Before building you must copy misc/patch_dialtimer.go into the net package's directory (in my case it lives in /usr/local/go/src/net/ ). We must do this hack in order to get DNS and Connect timings for http test.
+This code will only work against Go 1.6.2 . Before building you must copy misc/patch_dialtimer.go into the net package's directory (in my case it lives in /usr/local/go/src/net/ ). We must do this hack in order to get DNS and Connect timings for http test.
 
 ## Build instructions
 
