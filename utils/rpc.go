@@ -24,6 +24,16 @@ type CombinedRequest struct {
 	AgentFilter []*big.Int
 }
 
+//Clone a CombinedRequest.. sort of deepcopy
+func (original *CombinedRequest) Clone() *CombinedRequest {
+	return &CombinedRequest{
+		Type:        original.Type,
+		Args:        original.Args,
+		RequestedAt: original.RequestedAt,
+		AgentFilter: original.AgentFilter,
+	}
+}
+
 type CombinedResult struct {
 	Type         int           //Test type. 1=dns, 2=mtr, 3=curl
 	Result       interface{}   //DNSResult for dns, CurlResult for curl and MtrResult for mtr

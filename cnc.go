@@ -363,15 +363,15 @@ func slicecontainsbigint(num *big.Int, arr []*big.Int) bool {
 	return false
 }
 
-func (tracker *Tracker) Runner(req *pulse.CombinedRequest) []*pulse.CombinedResult {
+func (tracker *Tracker) Runner(reqorg *pulse.CombinedRequest) []*pulse.CombinedResult {
 	tracker.workerlock.RLock()
 	defer tracker.workerlock.RUnlock()
-	log.Println(req.AgentFilter)
+	log.Println(reqorg.AgentFilter)
 	var tmpworker = make(map[string]*Worker)
 	for ip, worker := range tracker.workers {
-		if len(req.AgentFilter) == 0 {
+		if len(reqorg.AgentFilter) == 0 {
 			tmpworker[ip] = worker
-		} else if slicecontainsbigint(worker.Serial, req.AgentFilter) {
+		} else if slicecontainsbigint(worker.Serial, reqorg.AgentFilter) {
 			tmpworker[ip] = worker
 		}
 	}
@@ -379,14 +379,16 @@ func (tracker *Tracker) Runner(req *pulse.CombinedRequest) []*pulse.CombinedResu
 	n := len(tmpworker)
 	rchan := make(chan *pulse.CombinedResult, n)
 	var originalargs pulse.DNSRequest
-	if req.Type == pulse.TypeDNS {
-		args, ok := req.Args.(pulse.DNSRequest)
+	if reqorg.Type == pulse.TypeDNS {
+		args, ok := reqorg.Args.(pulse.DNSRequest)
 		if ok {
 			originalargs = args
 		}
 	}
 	for ip, worker := range tmpworker {
 		go func(worker *Worker, ip string) {
+			//Clone the request to avoid pointer mixup when issuing concurrent rpc calls
+			req := reqorg.Clone()
 			log.Println(ip, worker)
 			var reply *pulse.CombinedResult
 			//TODO: Implement timeout
