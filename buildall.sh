@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VERSION="1.0.60"
+VERSION="1.0.61"
 LDFLAGS="-X main.version=$VERSION"
 KEY=$1 #The key to sign the package with
 

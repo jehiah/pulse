@@ -147,6 +147,10 @@ func CurlImpl(r *CurlRequest) *CurlResult {
 		tlshost = r.Host //Validate with Host hdr if present
 	}
 
+	// Currently the transport leaks FD because currently http2
+	// does not respect IdleConnTimeout
+	// https://github.com/golang/go/issues/16808
+
 	//Configure our transport, new one for each request
 	transport := &http.Transport{
 		Proxy:                 http.ProxyFromEnvironment,
@@ -156,6 +160,11 @@ func CurlImpl(r *CurlRequest) *CurlResult {
 		TLSHandshakeTimeout:   tlshandshaketimeout,
 		ExpectContinueTimeout: 1 * time.Second,
 	}
+
+	// Due to #16808, transport going out of scope does not cleanup
+	// idle connections. We must do it by hand using CloseIdleConnections()
+	defer transport.CloseIdleConnections()
+
 	//Initialize our client
 	client := http.Client{
 		Transport: transport,
