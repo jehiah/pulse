@@ -194,6 +194,8 @@ func CurlImpl(r *CurlRequest) *CurlResult {
 			client.Do(reqtmp) //Don't care about response..
 			//Now mess with TLSClientConfig
 			transport.TLSClientConfig.ServerName = tlshost
+			//Not closing server was causing FD leak in prod but not in dev.. weird
+			server.Close()
 		}
 	}
 
