@@ -163,7 +163,12 @@ func CurlImpl(r *CurlRequest) *CurlResult {
 
 	// Due to #16808, transport going out of scope does not cleanup
 	// idle connections. We must do it by hand using CloseIdleConnections()
-	defer transport.CloseIdleConnections()
+	defer func() {
+		// There is something racey going on, noticed an issue on my dev machine
+		// but not on prod. Does not hurt to sleep for a sec.
+		time.Sleep(time.Second)
+		transport.CloseIdleConnections()
+	}()
 
 	//Initialize our client
 	client := http.Client{
