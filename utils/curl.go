@@ -25,7 +25,7 @@ const (
 var (
 	tlshandshaketimeout = time.Second * 15 //Timeout for TLS handshake
 	dialtimeout         = time.Second * 15 //Timeout for Dial (DNS + TCP connect)
-	responsetimeout     = time.Second * 30 //Time out for response header
+	responsetimeout     = time.Second * 25 //Time out for response header
 	keepalive           = time.Second * 30 //Keepalive timeout
 )
 
@@ -159,6 +159,7 @@ func CurlImpl(r *CurlRequest) *CurlResult {
 		IdleConnTimeout:       90 * time.Second, //Irrelevant
 		TLSHandshakeTimeout:   tlshandshaketimeout,
 		ExpectContinueTimeout: 1 * time.Second,
+		ResponseHeaderTimeout: responsetimeout,
 	}
 
 	// Due to #16808, transport going out of scope does not cleanup
