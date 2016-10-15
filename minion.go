@@ -26,8 +26,7 @@ func (i *serverflag) Set(value string) error {
 
 func main() {
 	var cnc string
-	var servers serverflag
-	servers = []string{"8.8.8.8:53", "208.67.222.222:53"}
+	servers := []serverflag{"8.8.8.8:53", "208.67.222.222:53"}
 	var caFile, certificateFile, privateKeyFile, reqFile string
 	flag.StringVar(&caFile, "ca", "ca.crt", "Path to CA")
 	flag.StringVar(&certificateFile, "crt", "minion.crt", "Path to Server Certificate")

@@ -5,7 +5,6 @@ package pulse
 import (
 	"crypto/tls"
 	"encoding/gob"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -31,19 +30,6 @@ func (p *Pinger) Ping(host, out *bool) error {
 	log.Println("Got pung")
 	p.Last = time.Now()
 	*out = true
-	return nil
-}
-
-type serverflag []string
-
-func (i *serverflag) String() string {
-	return fmt.Sprintf("%v", *i)
-}
-
-func (i *serverflag) Set(value string) error {
-	//fmt.Printf("hdr %s\n", value)
-	//m := *i
-	*i = append(*i, value)
 	return nil
 }
 
@@ -85,30 +71,38 @@ func listen(cnc string, servers []string, cfg *tls.Config) {
 func versionsuicide() {
 	localversion := strings.TrimSpace(version)
 	//start := time.Now()
-	for {
+	for range time.Tick(time.Minute * 5) {
 		//if time.Since(start) > time.Hour*24 {
 		//	log.Fatal("Suiciding")
 		//}
-		resp, err := http.Get("https://tb-minion.turbobytes.net/latest")
-		if err == nil {
-			body, err := ioutil.ReadAll(resp.Body)
-			if err == nil {
-				strbody := strings.TrimSpace(string(body))
-				if strbody != localversion {
-					log.Fatal("New version " + strbody + " is available. currently using " + localversion)
-					os.Remove("current")
-				} else {
-					log.Println("On latest version")
-				}
-			} else {
-				log.Println(err)
-			}
-		} else {
+		v, err := expectedVersion()
+		if err != nil {
 			log.Println(err)
+		} else if v != localversion {
+			log.Fatalf("New version %s is available. currently using %s", v, localversion)
+			// unreachable
+			os.Remove("current")
+		} else {
+			log.Println("On latest version", localversion)
 		}
-		time.Sleep(time.Minute * 5) //Sleep 5 mins...
-
 	}
+}
+
+// expectedVersion gets the expected versoin that should be running
+func expectedVersion() (string, error) {
+	resp, err := http.Get("https://tb-minion.turbobytes.net/latest")
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("Got status code %d expected 200", resp.StatusCode)
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(body)), nil
 }
 
 func Runminion(cnc, caFile, certificateFile, privateKeyFile, reqFile, ver string, servers []string) error {
@@ -146,7 +140,7 @@ func Runminion(cnc, caFile, certificateFile, privateKeyFile, reqFile, ver string
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != 200 {
-			errors.New("Status was not 200!")
+			return fmt.Errorf("Got status code %d expected 200", resp.StatusCode)
 		}
 		f, err := os.Create(caFile)
 		_, err = io.Copy(f, resp.Body)
@@ -173,25 +167,22 @@ func Runminion(cnc, caFile, certificateFile, privateKeyFile, reqFile, ver string
 		log.Println("Checking if certificate has been uploaded yet...")
 		url := "https://tb-minion.turbobytes.net/certs/" + hash + ".crt"
 		resp, err := http.Get(url)
-		if err == nil {
-			if resp.StatusCode == 200 {
-				body, err := ioutil.ReadAll(resp.Body)
-				if err != nil {
-					return err
-				}
-				f, err := os.Create(certificateFile)
-				if err != nil {
-					//Permission issue?
-					return err
-				}
-				f.Write(body)
-				f.Close()
-			} else {
-				//404 or 403 cause cert not yet uploaded
-				return errors.New(resp.Status)
-			}
-		} else {
-			//Error contacting S3, FAIL here because we know cert is missing
+		//Error contacting S3, FAIL here because we know cert is missing
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != 200 {
+			//404 or 403 cause cert not yet uploaded
+			return fmt.Errorf("Got status code %d expected 200", resp.StatusCode)
+		}
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		err = ioutil.WriteFile(certificateFile, body, 0666)
+		if err != nil {
+			//Permission issue?
 			return err
 		}
 	}
