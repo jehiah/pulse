@@ -5,8 +5,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/turbobytes/pulse/utils"
 	"log"
+
+	"github.com/turbobytes/pulse/utils"
 )
 
 var version string

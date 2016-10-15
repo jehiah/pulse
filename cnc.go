@@ -9,12 +9,6 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
-	"github.com/abh/geoip"
-	"github.com/miekg/dns"
-	"github.com/sajal/mtrparser"
-	"github.com/turbobytes/pulse/utils"
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
 	"io"
 	"io/ioutil"
 	"log"
@@ -25,6 +19,13 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/abh/geoip"
+	"github.com/miekg/dns"
+	"github.com/sajal/mtrparser"
+	"github.com/turbobytes/pulse/utils"
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 )
 
 //type Resolver int
