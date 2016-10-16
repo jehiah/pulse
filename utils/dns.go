@@ -1,11 +1,12 @@
 package pulse
 
 import (
-	"github.com/miekg/dns"
 	"log"
 	"math/big"
 	"strings"
 	"time"
+
+	"github.com/miekg/dns"
 )
 
 type IndividualDNSResult struct {

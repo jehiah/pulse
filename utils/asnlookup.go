@@ -3,11 +3,12 @@ package pulse
 import (
 	"errors"
 	"fmt"
-	"github.com/miekg/dns"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/miekg/dns"
 )
 
 var LookupErr = errors.New("Ipinfo error")

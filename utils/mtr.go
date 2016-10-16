@@ -1,9 +1,10 @@
 package pulse
 
 import (
-	"github.com/sajal/mtrparser"
 	"math/big"
 	"strings"
+
+	"github.com/sajal/mtrparser"
 )
 
 type MtrResult struct {
