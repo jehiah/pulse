@@ -33,7 +33,7 @@ func (p *Pinger) Ping(host, out *bool) error {
 	return nil
 }
 
-func listen(cnc string, servers []string, cfg *tls.Config) {
+func listen(cnc string, cfg *tls.Config) {
 	dialer := new(net.Dialer)
 	dialer.Timeout = time.Minute
 
@@ -105,16 +105,14 @@ func expectedVersion() (string, error) {
 	return strings.TrimSpace(string(body)), nil
 }
 
-func Runminion(cnc, caFile, certificateFile, privateKeyFile, reqFile, ver string, servers []string) error {
+func Runminion(cnc, caFile, certificateFile, privateKeyFile, reqFile, ver string) error {
 	gob.RegisterName("github.com/turbobytes/pulse/utils.MtrRequest", MtrRequest{})
 	gob.RegisterName("github.com/turbobytes/pulse/utils.MtrResult", MtrResult{})
 	gob.RegisterName("github.com/turbobytes/pulse/utils.CurlRequest", CurlRequest{})
 	gob.RegisterName("github.com/turbobytes/pulse/utils.CurlResult", CurlResult{})
 	gob.RegisterName("github.com/turbobytes/pulse/utils.DNSRequest", DNSRequest{})
 	gob.RegisterName("github.com/turbobytes/pulse/utils.DNSResult", DNSResult{})
-	servers = []string{"8.8.8.8:53", "208.67.222.222:53"}
 
-	log.Println("servers", servers)
 	version = ver
 	if version == "" {
 		log.Println("No version information provided, not doing autoupdate")
@@ -124,7 +122,6 @@ func Runminion(cnc, caFile, certificateFile, privateKeyFile, reqFile, ver string
 	}
 
 	resolver := new(Resolver)
-	resolver.Servers = servers
 	resolver.Version = version
 	pinger = &Pinger{}
 	rpc.Register(resolver)
@@ -190,7 +187,7 @@ func Runminion(cnc, caFile, certificateFile, privateKeyFile, reqFile, ver string
 	for {
 		//Infinite loop... i.e. reconnect when booboo
 		cfg := GetTLSConfig(caFile, certificateFile, privateKeyFile)
-		listen(cnc, servers, cfg)
+		listen(cnc, cfg)
 	}
 	return nil
 }
