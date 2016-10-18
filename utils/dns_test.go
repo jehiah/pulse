@@ -30,7 +30,11 @@ func TestDNSImpl(t *testing.T) {
 	}
 	mock := fmt.Sprintf("127.0.0.1:%d", port)
 	server := &dns.Server{Addr: mock, Net: "udp"}
-	go server.ListenAndServe()
+	go func() {
+		//Fail if any errors creating mock server
+		err := server.ListenAndServe()
+		t.Fatal(err)
+	}()
 	//Setup handlers
 	//Always responds 1.1.1.1 and only to qtype A
 	dns.HandleFunc("foo.pulse.", func(w dns.ResponseWriter, r *dns.Msg) {
