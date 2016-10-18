@@ -28,7 +28,7 @@ func TestDNSImpl(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	mock := fmt.Sprintf("localhost:%d", port)
+	mock := fmt.Sprintf("127.0.0.1:%d", port)
 	server := &dns.Server{Addr: mock, Net: "udp"}
 	go server.ListenAndServe()
 	//Setup handlers
@@ -82,7 +82,7 @@ func TestDNSImpl(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	
+
 	//Assert things in response message
 	if len(m1.Answer) != 1 {
 		t.Fatalf("There should be exactly 1 Answer, got %d", len(m1.Answer))
