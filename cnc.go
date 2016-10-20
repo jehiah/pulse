@@ -201,7 +201,7 @@ func NewWorker(conn net.Conn) *Worker {
 	} else {
 		w.ASN, w.ASName = getasn(w.IP)
 
-		err := pingworker(w) //Ping in begining to make sure we can talk and trigger handshake
+		err := pingworker(w) //Ping in beginning to make sure we can talk and trigger handshake
 		if err == nil {
 			state := tlsconn.ConnectionState()
 			if len(state.PeerCertificates) > 0 {
