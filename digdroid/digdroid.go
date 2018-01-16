@@ -7,10 +7,11 @@ package digdroid
 import (
 	"bytes"
 	"fmt"
-	"github.com/miekg/dns"
-	"github.com/turbobytes/pulse/utils"
 	"log"
 	"text/tabwriter"
+
+	"github.com/miekg/dns"
+	"github.com/turbobytes/pulse/utils"
 )
 
 type DNSResult struct {

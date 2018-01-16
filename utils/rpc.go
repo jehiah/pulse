@@ -7,7 +7,6 @@ import (
 )
 
 type Resolver struct {
-	Servers []string
 	Version string
 }
 

@@ -61,3 +61,16 @@ func TestCurlLocalBlock(t *testing.T) {
 		t.Error("Security err should have been raised")
 	}
 }
+
+// Timing tests require hitting an external url towards TurboBytes mock server.
+// Maybe this is not a good idea. Perhaps we need a local mocker.
+// Perhaps wait for https://go-review.googlesource.com/#/c/29440/ to land in release to help with local mock server.
+// Following URLs will give unpredictable results for people behind a transparent proxy.
+// example url: http://<random>.imagetest.100msdelay.mock.turbobytes.com:8100/static/rum/image-15kb.jpg
+// no DNS delay: <random>.imagetest.npdelay.mock.turbobytes.com
+// 100ms DNS delay: <random>.imagetest.100msdelay.mock.turbobytes.com
+// 200ms DNS delay: <random>.imagetest.200msdelay.mock.turbobytes.com
+// HTTP port 80: no latency
+// HTTP port 8100: Additional 100ms network latency
+// TODO: Endpoint to simulate delay during TTFB
+// TODO: Blackhole test - perhaps use WPT's endpoint - blackhole.webpagetest.org
